@@ -2,9 +2,9 @@ services:
   mirofish:
     build: .
     container_name: mirofish-offline
-    ports:
-      - "3000:3000"
-      - "5001:5001"
+    expose:
+      - "3000"
+      - "5001"
     environment:
       # LLM — внешний OpenAI-совместимый провайдер (задаётся в Dokploy)
       LLM_API_KEY: ${LLM_API_KEY}
