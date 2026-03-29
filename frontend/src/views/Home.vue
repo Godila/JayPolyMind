@@ -10,11 +10,11 @@
     <!-- Navbar -->
     <nav class="navbar">
       <div class="nav-brand">
-        <SibylLogo />
-        <span class="brand-name">Jay<span class="brand-accent">Sibyl</span></span>
+        <img src="/logo.png" height="36" class="nav-logo" alt="JayPolyMind">
+        <span class="brand-name">Jay<span class="brand-poly">Poly</span>Mind</span>
       </div>
       <div class="nav-right">
-        <span class="nav-badge">v0.2 · preview</span>
+        <span class="nav-badge">v0.2 · Early Access</span>
         <a href="https://github.com/Godila/MiroFish-My" target="_blank" class="nav-link">
           GitHub <span class="link-arrow">↗</span>
         </a>
@@ -22,85 +22,97 @@
     </nav>
 
     <main class="main-wrap">
-      <!-- Hero -->
+
+      <!-- ── HERO ───────────────────────────────────────────────────────── -->
       <section class="hero">
         <div class="hero-left">
           <div class="hero-tag">
             <span class="tag-dot"></span>
-            Движок мультиагентного прогнозирования
+            Предиктивная аналитика поведения аудитории
           </div>
-
           <h1 class="hero-title">
-            Загрузите документ.<br>
-            <span class="hero-title-accent">Узнайте реакцию.</span>
+            Узнайте реакцию рынка —<br>
+            <span class="hero-accent">до того, как решение принято.</span>
           </h1>
-
           <p class="hero-desc">
-            <strong>JaySibyl</strong> извлекает смысловые зёрна из вашего документа и создаёт
-            параллельный мир из сотен <span class="hl-purple">автономных AI-агентов</span> —
-            полностью на вашем сервере. Задайте сценарий, наблюдайте за поведением,
-            находите <span class="hl-mono">"оптимальные траектории"</span> в сложных
-            социальных динамиках.
+            <strong>JayPolyMind</strong> моделирует поведение вашей аудитории на основе
+            загруженной документации. Платформа создаёт сотни
+            <span class="hl-blue">AI-агентов</span> — каждый с уникальным профилем,
+            убеждениями и логикой поведения — и запускает полноценную симуляцию
+            социальных реакций. Результат: структурированный прогноз за часы,
+            а не месяцы исследований.
           </p>
-
           <p class="hero-slogan">
-            Ваши данные не покидают инфраструктуру. Будущее симулируется локально<span class="cursor">_</span>
+            Принимайте стратегические решения с данными, а не догадками<span class="cursor">_</span>
           </p>
-
-          <div class="hero-metrics">
-            <div class="metric">
-              <span class="metric-val">Бесплатно</span>
-              <span class="metric-lbl">На вашем железе</span>
+          <div class="hero-kpi">
+            <div class="kpi-item">
+              <span class="kpi-val">В 10×</span>
+              <span class="kpi-lbl">быстрее традиционных исследований</span>
             </div>
-            <div class="metric-sep"></div>
-            <div class="metric">
-              <span class="metric-val">Приватно</span>
-              <span class="metric-lbl">100% офлайн, без облака</span>
+            <div class="kpi-sep"></div>
+            <div class="kpi-item">
+              <span class="kpi-val">1000+</span>
+              <span class="kpi-lbl">агентов в одной симуляции</span>
+            </div>
+            <div class="kpi-sep"></div>
+            <div class="kpi-item">
+              <span class="kpi-val">Часы</span>
+              <span class="kpi-lbl">от документа до отчёта</span>
             </div>
           </div>
         </div>
-
         <div class="hero-right">
-          <div class="hero-graphic">
-            <HeroGraph />
+          <div class="logo-showcase">
+            <div class="logo-glow"></div>
+            <img src="/logo.png" class="logo-img" alt="JayPolyMind">
           </div>
         </div>
       </section>
 
-      <!-- Dashboard -->
-      <section class="dashboard">
-        <!-- Left: Steps -->
-        <div class="steps-panel">
-          <div class="panel-label">
-            <span class="status-dot"></span> Статус системы
-          </div>
-          <div class="status-ready">Готово</div>
-          <p class="status-desc">
-            Движок прогнозирования в режиме ожидания. Загрузите данные для запуска симуляции.
-          </p>
-
-          <div class="steps-block">
-            <div class="steps-label">◇ Последовательность</div>
-            <div class="steps-list">
-              <div v-for="(step, i) in steps" :key="i" class="step-item">
-                <span class="step-num">{{ step.num }}</span>
-                <div class="step-body">
-                  <div class="step-title">{{ step.title }}</div>
-                  <div class="step-desc">{{ step.desc }}</div>
-                </div>
-              </div>
-            </div>
+      <!-- ── USE CASES ──────────────────────────────────────────────────── -->
+      <section class="use-cases">
+        <div class="section-head">
+          <span class="section-eyebrow">Применение</span>
+          <h2 class="section-title">Где работает JayPolyMind</h2>
+        </div>
+        <div class="cases-grid">
+          <div v-for="(uc, i) in useCases" :key="i" class="case-card">
+            <div class="case-num">{{ String(i + 1).padStart(2, '0') }}</div>
+            <h3 class="case-title">{{ uc.title }}</h3>
+            <p class="case-desc">{{ uc.desc }}</p>
           </div>
         </div>
+      </section>
 
-        <!-- Right: Console -->
-        <div class="console-panel">
-          <div class="console-box">
+      <!-- ── HOW IT WORKS ───────────────────────────────────────────────── -->
+      <section class="how-it-works">
+        <div class="section-head">
+          <span class="section-eyebrow">Процесс</span>
+          <h2 class="section-title">Пять шагов от документа до прогноза</h2>
+        </div>
+        <div class="steps-row">
+          <div v-for="(step, i) in steps" :key="i" class="step-card" :style="{ '--i': i }">
+            <div class="step-num-badge">{{ step.num }}</div>
+            <h4 class="step-name">{{ step.title }}</h4>
+            <p class="step-detail">{{ step.desc }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── LAUNCH FORM ────────────────────────────────────────────────── -->
+      <section class="launch-section">
+        <div class="launch-head">
+          <h2 class="launch-title">Запустить симуляцию</h2>
+          <p class="launch-sub">Загрузите документ с описанием контекста и задайте исследовательский вопрос.</p>
+        </div>
+        <div class="launch-card">
+          <div class="form-grid">
             <!-- Upload -->
-            <div class="console-section">
-              <div class="console-hdr">
-                <span>01 / Исходные данные</span>
-                <span class="console-hdr-right">Поддержка: PDF, MD, TXT</span>
+            <div class="form-col">
+              <div class="field-hdr">
+                <span class="field-label">01 / Исходная документация</span>
+                <span class="field-hint">PDF · MD · TXT</span>
               </div>
               <div
                 class="upload-zone"
@@ -114,12 +126,12 @@
                   @change="handleFileSelect" style="display:none" :disabled="loading" />
                 <div v-if="files.length === 0" class="upload-placeholder">
                   <div class="upload-icon">↑</div>
-                  <div class="upload-title">Перетащите файлы сюда</div>
+                  <div class="upload-title">Перетащите документы сюда</div>
                   <div class="upload-hint">или нажмите для выбора</div>
                 </div>
                 <div v-else class="file-list">
                   <div v-for="(file, index) in files" :key="index" class="file-item">
-                    <span>📄</span>
+                    <span class="file-icon">📄</span>
                     <span class="file-name">{{ file.name }}</span>
                     <button @click.stop="removeFile(index)" class="remove-btn">×</button>
                   </div>
@@ -127,32 +139,29 @@
               </div>
             </div>
 
-            <div class="console-divider"><span>Параметры</span></div>
-
             <!-- Prompt -->
-            <div class="console-section">
-              <div class="console-hdr">
-                <span>&gt;_ 02 / Запрос симуляции</span>
+            <div class="form-col">
+              <div class="field-hdr">
+                <span class="field-label">&gt;_ 02 / Исследовательский вопрос</span>
               </div>
-              <div class="input-wrap">
+              <div class="prompt-wrap">
                 <textarea
                   v-model="formData.simulationRequirement"
-                  class="code-input"
-                  placeholder="// Опишите цель симуляции или прогноза на естественном языке"
-                  rows="6"
+                  class="prompt-input"
+                  placeholder="Например: «Как сотрудники и профсоюзы отреагируют на переход к четырёхдневной рабочей неделе в производственном секторе?»"
+                  rows="7"
                   :disabled="loading"
                 ></textarea>
-                <div class="model-badge">Движок: LLM + Neo4j (локально)</div>
+                <div class="engine-badge">Движок: LLM + Neo4j</div>
               </div>
             </div>
+          </div>
 
-            <!-- Button -->
-            <div class="btn-section">
-              <button class="start-btn" @click="startSimulation" :disabled="!canSubmit || loading">
-                <span>{{ loading ? 'Инициализация...' : 'Запустить' }}</span>
-                <span class="btn-arrow">→</span>
-              </button>
-            </div>
+          <div class="cta-row">
+            <button class="start-btn" @click="startSimulation" :disabled="!canSubmit || loading">
+              <span>{{ loading ? 'Инициализация...' : 'Запустить симуляцию' }}</span>
+              <span class="btn-arrow">→</span>
+            </button>
           </div>
         </div>
       </section>
@@ -167,116 +176,43 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import HistoryDatabase from '../components/HistoryDatabase.vue'
 
-// ── Inline SVG components ──────────────────────────────────────────────────
-
-const SibylLogo = {
-  template: `
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="sg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#6C63FF"/>
-          <stop offset="100%" stop-color="#FF4D8D"/>
-        </linearGradient>
-      </defs>
-      <!-- Outer ring nodes -->
-      <circle cx="16" cy="3"  r="2.2" fill="url(#sg)" opacity="0.9"/>
-      <circle cx="28" cy="10" r="2.2" fill="url(#sg)" opacity="0.9"/>
-      <circle cx="28" cy="22" r="2.2" fill="url(#sg)" opacity="0.9"/>
-      <circle cx="16" cy="29" r="2.2" fill="url(#sg)" opacity="0.9"/>
-      <circle cx="4"  cy="22" r="2.2" fill="url(#sg)" opacity="0.9"/>
-      <circle cx="4"  cy="10" r="2.2" fill="url(#sg)" opacity="0.9"/>
-      <!-- Center -->
-      <circle cx="16" cy="16" r="3.5" fill="url(#sg)"/>
-      <!-- Edges -->
-      <line x1="16" y1="3"  x2="16" y2="16" stroke="url(#sg)" stroke-width="0.8" opacity="0.5"/>
-      <line x1="28" y1="10" x2="16" y2="16" stroke="url(#sg)" stroke-width="0.8" opacity="0.5"/>
-      <line x1="28" y1="22" x2="16" y2="16" stroke="url(#sg)" stroke-width="0.8" opacity="0.5"/>
-      <line x1="16" y1="29" x2="16" y2="16" stroke="url(#sg)" stroke-width="0.8" opacity="0.5"/>
-      <line x1="4"  cy="22" x2="16" y2="16" stroke="url(#sg)" stroke-width="0.8" opacity="0.5"/>
-      <line x1="4"  y1="10" x2="16" y2="16" stroke="url(#sg)" stroke-width="0.8" opacity="0.5"/>
-      <!-- Hex ring -->
-      <polygon points="16,3 28,10 28,22 16,29 4,22 4,10"
-        fill="none" stroke="url(#sg)" stroke-width="0.6" opacity="0.3"/>
-    </svg>
-  `
-}
-
-const HeroGraph = {
-  template: `
-    <svg width="420" height="360" viewBox="0 0 420 360" fill="none" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
-      <defs>
-        <linearGradient id="hg1" x1="0" y1="0" x2="420" y2="360" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#6C63FF" stop-opacity="0.8"/>
-          <stop offset="100%" stop-color="#FF4D8D" stop-opacity="0.8"/>
-        </linearGradient>
-        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#6C63FF" stop-opacity="0.3"/>
-          <stop offset="100%" stop-color="#6C63FF" stop-opacity="0"/>
-        </radialGradient>
-        <filter id="blur"><feGaussianBlur stdDeviation="8"/></filter>
-      </defs>
-
-      <!-- Glow bg -->
-      <ellipse cx="210" cy="180" rx="160" ry="120" fill="url(#glow)" filter="url(#blur)"/>
-
-      <!-- Edge lines -->
-      <line x1="210" y1="180" x2="100" y2="80"  stroke="url(#hg1)" stroke-width="1.2" opacity="0.4"/>
-      <line x1="210" y1="180" x2="320" y2="80"  stroke="url(#hg1)" stroke-width="1.2" opacity="0.4"/>
-      <line x1="210" y1="180" x2="60"  y2="210" stroke="url(#hg1)" stroke-width="1.2" opacity="0.4"/>
-      <line x1="210" y1="180" x2="360" y2="210" stroke="url(#hg1)" stroke-width="1.2" opacity="0.4"/>
-      <line x1="210" y1="180" x2="130" y2="310" stroke="url(#hg1)" stroke-width="1.2" opacity="0.4"/>
-      <line x1="210" y1="180" x2="290" y2="310" stroke="url(#hg1)" stroke-width="1.2" opacity="0.4"/>
-      <line x1="100" y1="80"  x2="320" y2="80"  stroke="#6C63FF" stroke-width="0.6" opacity="0.25"/>
-      <line x1="60"  y1="210" x2="130" y2="310" stroke="#FF4D8D" stroke-width="0.6" opacity="0.25"/>
-      <line x1="360" y1="210" x2="290" y2="310" stroke="#FF4D8D" stroke-width="0.6" opacity="0.25"/>
-
-      <!-- Satellite nodes -->
-      <circle cx="100" cy="80"  r="8"  fill="#6C63FF" opacity="0.85"/>
-      <circle cx="320" cy="80"  r="6"  fill="#7C6FFF" opacity="0.75"/>
-      <circle cx="60"  cy="210" r="7"  fill="#FF4D8D" opacity="0.75"/>
-      <circle cx="360" cy="210" r="9"  fill="#6C63FF" opacity="0.8"/>
-      <circle cx="130" cy="310" r="6"  fill="#FF4D8D" opacity="0.7"/>
-      <circle cx="290" cy="310" r="8"  fill="#6C63FF" opacity="0.8"/>
-
-      <!-- Small secondary nodes -->
-      <circle cx="170" cy="110" r="3.5" fill="#9D97FF" opacity="0.6"/>
-      <circle cx="280" cy="140" r="3"   fill="#FF7BAD" opacity="0.5"/>
-      <circle cx="85"  cy="140" r="3"   fill="#6C63FF" opacity="0.5"/>
-      <circle cx="340" cy="150" r="3.5" fill="#9D97FF" opacity="0.6"/>
-      <circle cx="190" cy="280" r="3"   fill="#FF4D8D" opacity="0.5"/>
-      <line x1="170" y1="110" x2="100" y2="80"  stroke="#6C63FF" stroke-width="0.5" opacity="0.3"/>
-      <line x1="280" y1="140" x2="320" y2="80"  stroke="#6C63FF" stroke-width="0.5" opacity="0.3"/>
-      <line x1="280" y1="140" x2="360" y2="210" stroke="#6C63FF" stroke-width="0.5" opacity="0.3"/>
-
-      <!-- Central node with rings -->
-      <circle cx="210" cy="180" r="22" fill="#080810" stroke="url(#hg1)" stroke-width="2"/>
-      <circle cx="210" cy="180" r="14" fill="url(#hg1)" opacity="0.9"/>
-      <circle cx="210" cy="180" r="6"  fill="#fff" opacity="0.95"/>
-
-      <!-- Orbit ring -->
-      <circle cx="210" cy="180" r="36" fill="none" stroke="url(#hg1)" stroke-width="0.5" stroke-dasharray="4 6" opacity="0.35"/>
-    </svg>
-  `
-}
-
 // ── Data ───────────────────────────────────────────────────────────────────
 
-const steps = [
-  { num: '01', title: 'Построение графа',  desc: 'Извлечение смысловых зёрен из документа, построение графа знаний Neo4j + GraphRAG' },
-  { num: '02', title: 'Настройка среды',   desc: 'Генерация персон агентов, настройка параметров симуляции через LLM' },
-  { num: '03', title: 'Симуляция',         desc: 'Запуск мультиагентной симуляции с динамическим обновлением памяти' },
-  { num: '04', title: 'Отчёт',             desc: 'ReportAgent анализирует результаты и генерирует детальный прогнозный отчёт' },
-  { num: '05', title: 'Взаимодействие',    desc: 'Чат с любым агентом симулированного мира или обсуждение выводов с ReportAgent' },
+const useCases = [
+  {
+    title: 'Регуляторные изменения',
+    desc: 'Оцените восприятие новых норм до их введения — по каждому сегменту аудитории'
+  },
+  {
+    title: 'Внутренние трансформации',
+    desc: 'Смоделируйте реакцию команды на реструктуризацию, слияние или смену стратегии'
+  },
+  {
+    title: 'Запуск коммуникаций',
+    desc: 'Протестируйте месседжи и позиционирование до публичного выхода'
+  },
+  {
+    title: 'Вывод продукта на рынок',
+    desc: 'Предскажите поведение сегментов и выявите точки сопротивления заранее'
+  },
 ]
 
-// ── Logic (unchanged) ──────────────────────────────────────────────────────
+const steps = [
+  { num: '01', title: 'Граф знаний',        desc: 'Платформа анализирует документ, выделяет сущности и связи' },
+  { num: '02', title: 'Профили агентов',     desc: 'LLM создаёт психологические портреты стейкхолдеров' },
+  { num: '03', title: 'Симуляция',           desc: 'Агенты взаимодействуют в среде, поведение фиксируется в реальном времени' },
+  { num: '04', title: 'Аналитический отчёт', desc: 'ReportAgent синтезирует итоги и формирует структурированный прогноз' },
+  { num: '05', title: 'Углублённый диалог',  desc: 'Уточняйте результаты в диалоге с любым агентом или с ReportAgent' },
+]
 
-const router = useRouter()
-const formData = ref({ simulationRequirement: '' })
-const files = ref([])
-const loading = ref(false)
+// ── Logic ──────────────────────────────────────────────────────────────────
+
+const router     = useRouter()
+const formData   = ref({ simulationRequirement: '' })
+const files      = ref([])
+const loading    = ref(false)
 const isDragOver = ref(false)
-const fileInput = ref(null)
+const fileInput  = ref(null)
 
 const canSubmit = computed(() =>
   formData.value.simulationRequirement.trim() !== '' && files.value.length > 0
@@ -284,9 +220,9 @@ const canSubmit = computed(() =>
 
 const triggerFileInput = () => { if (!loading.value) fileInput.value?.click() }
 const handleFileSelect = (e) => addFiles(Array.from(e.target.files))
-const handleDragOver  = () => { isDragOver.value = true }
-const handleDragLeave = () => { isDragOver.value = false }
-const handleDrop      = (e) => { isDragOver.value = false; addFiles(Array.from(e.dataTransfer.files)) }
+const handleDragOver   = () => { isDragOver.value = true }
+const handleDragLeave  = () => { isDragOver.value = false }
+const handleDrop       = (e) => { isDragOver.value = false; addFiles(Array.from(e.dataTransfer.files)) }
 
 const addFiles = (newFiles) => {
   const allowed = ['.pdf', '.md', '.txt']
@@ -308,343 +244,434 @@ const startSimulation = () => {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Onest:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
 
-/* ── Tokens ─────────────────────────────────────────────────────────────── */
+/* ── Tokens ──────────────────────────────────────────────────────────────── */
 :root {
-  --bg:          #080810;
-  --bg2:         #0F0F1A;
-  --bg3:         #16162A;
-  --acc1:        #6C63FF;
-  --acc2:        #FF4D8D;
-  --txt:         #F0F0FF;
-  --txt2:        #8888AA;
-  --txt3:        #55556A;
-  --border:      rgba(108,99,255,0.18);
-  --border-h:    rgba(108,99,255,0.45);
-  --mono:        'JetBrains Mono', monospace;
-  --display:     'Unbounded', sans-serif;
-  --body:        'Onest', sans-serif;
+  --bg:       #060814;
+  --bg2:      #0A0F1E;
+  --bg3:      #0F1625;
+  --acc1:     #3B82F6;
+  --acc2:     #38BDF8;
+  --txt:      #EFF6FF;
+  --txt2:     #7FA4C4;
+  --txt3:     #3A5570;
+  --border:   rgba(59,130,246,0.15);
+  --border-h: rgba(59,130,246,0.4);
+  --mono:     'JetBrains Mono', monospace;
+  --display:  'Unbounded', sans-serif;
+  --body:     'Onest', sans-serif;
 }
 
-/* ── Reset ───────────────────────────────────────────────────────────────── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── Root ────────────────────────────────────────────────────────────────── */
 .home-root {
   min-height: 100vh;
-  background: #080810;
-  color: #F0F0FF;
-  font-family: 'Onest', sans-serif;
-  position: relative;
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--body);
   overflow-x: hidden;
 }
 
 /* ── Ambient bg ──────────────────────────────────────────────────────────── */
 .bg-ambient { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 .orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.12;
+  position: absolute; border-radius: 50%;
+  filter: blur(130px); opacity: 0.10;
 }
-.orb-1 { width: 700px; height: 700px; background: #6C63FF; top: -200px; left: -200px; }
-.orb-2 { width: 500px; height: 500px; background: #FF4D8D; bottom: -100px; right: -100px; }
+.orb-1 { width: 800px; height: 800px; background: #3B82F6; top: -300px; left: -200px; }
+.orb-2 { width: 600px; height: 600px; background: #0EA5E9; bottom: -100px; right: -150px; }
 .grid-overlay {
   position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(108,99,255,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(108,99,255,0.04) 1px, transparent 1px);
-  background-size: 60px 60px;
+    linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
 }
 
 /* ── Navbar ──────────────────────────────────────────────────────────────── */
 .navbar {
   position: relative; z-index: 10;
-  height: 64px;
+  height: 68px;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 48px;
-  border-bottom: 1px solid rgba(108,99,255,0.12);
-  background: rgba(8,8,16,0.85);
-  backdrop-filter: blur(12px);
+  padding: 0 52px;
+  border-bottom: 1px solid rgba(59,130,246,0.1);
+  background: rgba(6,8,20,0.88);
+  backdrop-filter: blur(16px);
 }
-.nav-brand { display: flex; align-items: center; gap: 12px; }
+.nav-brand { display: flex; align-items: center; gap: 14px; }
+.nav-logo { object-fit: contain; }
 .brand-name {
-  font-family: 'Unbounded', sans-serif;
-  font-size: 1.15rem; font-weight: 700;
-  letter-spacing: -0.5px; color: #F0F0FF;
+  font-family: var(--display);
+  font-size: 1.1rem; font-weight: 700;
+  letter-spacing: -0.3px; color: var(--txt);
 }
-.brand-accent { color: #6C63FF; }
+.brand-poly { color: var(--acc2); }
 .nav-right { display: flex; align-items: center; gap: 20px; }
 .nav-badge {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem; color: #55556A;
-  border: 1px solid rgba(108,99,255,0.15);
+  font-family: var(--mono);
+  font-size: 0.7rem; color: var(--txt3);
+  border: 1px solid rgba(59,130,246,0.2);
   padding: 3px 10px; border-radius: 20px;
 }
 .nav-link {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.82rem; color: #8888AA;
+  font-family: var(--mono);
+  font-size: 0.8rem; color: var(--txt2);
   text-decoration: none;
-  display: flex; align-items: center; gap: 5px;
+  display: flex; align-items: center; gap: 4px;
   transition: color .2s;
 }
-.nav-link:hover { color: #6C63FF; }
-.link-arrow { font-size: 0.75rem; }
+.nav-link:hover { color: var(--acc1); }
 
 /* ── Main wrap ───────────────────────────────────────────────────────────── */
 .main-wrap {
   position: relative; z-index: 1;
-  max-width: 1320px; margin: 0 auto;
-  padding: 72px 48px 80px;
+  max-width: 1360px; margin: 0 auto;
+  padding: 80px 52px 100px;
 }
 
-/* ── Hero ────────────────────────────────────────────────────────────────── */
+/* ── HERO ────────────────────────────────────────────────────────────────── */
 .hero {
-  display: flex; gap: 64px;
-  align-items: center;
-  margin-bottom: 96px;
+  display: flex; align-items: center;
+  gap: 72px;
+  margin-bottom: 112px;
 }
 .hero-left { flex: 1; }
-.hero-right { flex: 0 0 420px; }
+.hero-right { flex: 0 0 420px; display: flex; justify-content: center; }
 
 .hero-tag {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem; color: #6C63FF;
-  border: 1px solid rgba(108,99,255,0.3);
-  padding: 5px 14px; border-radius: 20px;
-  margin-bottom: 28px; letter-spacing: 0.5px;
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--mono); font-size: 0.72rem;
+  color: var(--acc2);
+  border: 1px solid rgba(56,189,248,0.3);
+  padding: 5px 16px; border-radius: 20px;
+  margin-bottom: 32px;
 }
 .tag-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%; background: #6C63FF;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--acc2);
   animation: pulse 2s infinite;
 }
-@keyframes pulse {
-  0%,100% { opacity: 1; }
-  50%      { opacity: 0.3; }
-}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
 .hero-title {
-  font-family: 'Unbounded', sans-serif;
-  font-size: clamp(2.4rem, 4vw, 3.6rem);
+  font-family: var(--display);
+  font-size: clamp(2.2rem, 3.8vw, 3.4rem);
   font-weight: 700; line-height: 1.15;
   letter-spacing: -1.5px;
-  color: #F0F0FF;
+  color: var(--txt);
   margin-bottom: 28px;
 }
-.hero-title-accent {
-  background: linear-gradient(90deg, #6C63FF 0%, #FF4D8D 100%);
+.hero-accent {
+  background: linear-gradient(90deg, var(--acc1) 0%, var(--acc2) 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .hero-desc {
-  font-size: 1.05rem; line-height: 1.8;
-  color: #8888AA; max-width: 580px;
-  margin-bottom: 32px;
+  font-size: 1.05rem; line-height: 1.85;
+  color: var(--txt2); max-width: 580px;
+  margin-bottom: 28px;
 }
-.hero-desc strong { color: #F0F0FF; font-weight: 600; }
-.hl-purple { color: #6C63FF; font-weight: 500; }
-.hl-mono {
-  font-family: 'JetBrains Mono', monospace;
-  background: rgba(108,99,255,0.12);
-  border: 1px solid rgba(108,99,255,0.2);
-  padding: 2px 7px; border-radius: 4px;
-  font-size: 0.9em; color: #9D97FF;
-}
+.hero-desc strong { color: var(--txt); font-weight: 600; }
+.hl-blue { color: var(--acc1); font-weight: 500; }
 
 .hero-slogan {
-  font-size: 0.95rem; color: #F0F0FF;
-  border-left: 2px solid #6C63FF;
+  font-size: 0.95rem; color: var(--txt);
+  border-left: 2px solid var(--acc1);
   padding-left: 16px; margin-bottom: 40px;
-  font-weight: 500; letter-spacing: 0.3px;
+  font-weight: 500;
 }
-.cursor { color: #FF4D8D; animation: blink 1.2s infinite; }
+.cursor { color: var(--acc2); animation: blink 1.2s infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-.hero-metrics { display: flex; align-items: center; gap: 28px; }
-.metric { display: flex; flex-direction: column; gap: 4px; }
-.metric-val {
-  font-family: 'Unbounded', sans-serif;
-  font-size: 1.3rem; font-weight: 700; color: #F0F0FF;
+.hero-kpi { display: flex; align-items: center; gap: 32px; }
+.kpi-item { display: flex; flex-direction: column; gap: 4px; }
+.kpi-val {
+  font-family: var(--display);
+  font-size: 1.4rem; font-weight: 700; color: var(--txt);
 }
-.metric-lbl { font-size: 0.8rem; color: #55556A; }
-.metric-sep { width: 1px; height: 36px; background: rgba(108,99,255,0.2); }
+.kpi-lbl { font-size: 0.78rem; color: var(--txt3); max-width: 120px; line-height: 1.4; }
+.kpi-sep { width: 1px; height: 36px; background: rgba(59,130,246,0.2); }
 
-.hero-graphic { display: flex; justify-content: center; align-items: center; }
-
-/* ── Dashboard ───────────────────────────────────────────────────────────── */
-.dashboard {
-  display: flex; gap: 56px;
-  align-items: flex-start;
-  padding-top: 56px;
-  border-top: 1px solid rgba(108,99,255,0.12);
+/* Logo showcase */
+.logo-showcase {
+  position: relative;
+  width: 380px; height: 380px;
+  display: flex; align-items: center; justify-content: center;
+}
+.logo-glow {
+  position: absolute; inset: -20px;
+  background: radial-gradient(circle at 50% 50%,
+    rgba(59,130,246,0.22) 0%,
+    rgba(14,165,233,0.07) 50%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  animation: glowPulse 4s ease-in-out infinite;
+}
+@keyframes glowPulse {
+  0%,100% { opacity: 0.7; transform: scale(1); }
+  50%     { opacity: 1;   transform: scale(1.08); }
+}
+.logo-img {
+  width: 340px; height: 340px;
+  object-fit: contain;
+  animation: float 6s ease-in-out infinite;
+  filter: drop-shadow(0 0 48px rgba(59,130,246,0.35));
+}
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-14px); }
 }
 
-/* Steps panel */
-.steps-panel { flex: 0 0 340px; }
-.panel-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.75rem; color: #55556A;
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 16px;
+/* ── Section head (shared) ───────────────────────────────────────────────── */
+.section-head { margin-bottom: 48px; }
+.section-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.7rem; color: var(--acc1);
+  letter-spacing: 2px; text-transform: uppercase;
+  display: block; margin-bottom: 12px;
 }
-.status-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%; background: #6C63FF;
-  animation: pulse 2s infinite;
+.section-title {
+  font-family: var(--display);
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 700; color: var(--txt);
+  letter-spacing: -0.5px;
 }
-.status-ready {
-  font-family: 'Unbounded', sans-serif;
-  font-size: 2rem; font-weight: 700;
-  color: #F0F0FF; margin-bottom: 10px;
-}
-.status-desc { font-size: 0.9rem; color: #8888AA; line-height: 1.6; margin-bottom: 28px; }
 
-.steps-block {
-  border: 1px solid rgba(108,99,255,0.15);
-  border-radius: 8px; padding: 24px;
-  background: rgba(15,15,26,0.6);
+/* ── USE CASES ───────────────────────────────────────────────────────────── */
+.use-cases {
+  padding: 72px 0;
+  border-top: 1px solid rgba(59,130,246,0.1);
 }
-.steps-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem; color: #55556A;
-  margin-bottom: 20px; letter-spacing: 1px;
+.cases-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
 }
-.steps-list { display: flex; flex-direction: column; gap: 18px; }
-.step-item { display: flex; gap: 16px; align-items: flex-start; }
-.step-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.75rem; font-weight: 600;
-  color: #6C63FF; opacity: 0.6;
-  min-width: 24px; padding-top: 2px;
+.case-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 24px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .25s, transform .2s;
 }
-.step-body { flex: 1; }
-.step-title { font-size: 0.9rem; font-weight: 600; color: #F0F0FF; margin-bottom: 3px; }
-.step-desc { font-size: 0.8rem; color: #55556A; line-height: 1.5; }
+.case-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--acc1), var(--acc2));
+  opacity: 0; transition: opacity .25s;
+}
+.case-card:hover { border-color: var(--border-h); transform: translateY(-3px); }
+.case-card:hover::before { opacity: 1; }
+.case-num {
+  font-family: var(--mono); font-size: 0.7rem;
+  color: var(--acc1); margin-bottom: 16px; font-weight: 600;
+}
+.case-title {
+  font-family: var(--display);
+  font-size: 0.92rem; font-weight: 700;
+  color: var(--txt); margin-bottom: 10px; line-height: 1.3;
+}
+.case-desc { font-size: 0.85rem; color: var(--txt2); line-height: 1.6; }
 
-/* Console panel */
-.console-panel { flex: 1; }
-.console-box {
-  border: 1px solid rgba(108,99,255,0.2);
-  border-radius: 10px; overflow: hidden;
-  background: rgba(15,15,26,0.8);
-  backdrop-filter: blur(8px);
+/* ── HOW IT WORKS ────────────────────────────────────────────────────────── */
+.how-it-works {
+  padding: 72px 0;
+  border-top: 1px solid rgba(59,130,246,0.1);
 }
-.console-section { padding: 20px 24px; }
-.console-hdr {
+.steps-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  position: relative;
+}
+.steps-row::before {
+  content: '';
+  position: absolute; top: 19px; left: 60px; right: 60px; height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(59,130,246,0.3) 10%,
+    rgba(59,130,246,0.3) 90%,
+    transparent
+  );
+}
+.step-card {
+  padding: 0 16px;
+  text-align: center;
+  animation: fadeUp .5s ease both;
+  animation-delay: calc(var(--i, 0) * 0.1s);
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.step-num-badge {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--bg2);
+  border: 1px solid rgba(59,130,246,0.4);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 0.72rem; font-weight: 600;
+  color: var(--acc1);
+  margin: 0 auto 20px;
+  position: relative; z-index: 1;
+  transition: background .2s, border-color .2s;
+}
+.step-card:hover .step-num-badge {
+  background: rgba(59,130,246,0.12);
+  border-color: var(--acc1);
+}
+.step-name {
+  font-family: var(--display);
+  font-size: 0.82rem; font-weight: 700;
+  color: var(--txt); margin-bottom: 8px; line-height: 1.3;
+}
+.step-detail { font-size: 0.78rem; color: var(--txt2); line-height: 1.6; }
+
+/* ── LAUNCH SECTION ──────────────────────────────────────────────────────── */
+.launch-section {
+  padding: 72px 0 0;
+  border-top: 1px solid rgba(59,130,246,0.1);
+}
+.launch-head { margin-bottom: 40px; }
+.launch-title {
+  font-family: var(--display);
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 700; color: var(--txt);
+  letter-spacing: -0.5px; margin-bottom: 10px;
+}
+.launch-sub { font-size: 0.95rem; color: var(--txt2); }
+
+.launch-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.form-col { padding: 28px 32px; }
+.form-col:first-child { border-right: 1px solid rgba(59,130,246,0.1); }
+
+.field-hdr {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 14px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem; color: #55556A; letter-spacing: 0.5px;
+  font-family: var(--mono); font-size: 0.72rem;
+  color: var(--txt3); letter-spacing: 0.5px;
 }
-.console-hdr-right { color: #8888AA; }
+.field-label { color: var(--txt3); }
+.field-hint { color: var(--txt2); }
 
+/* Upload zone */
 .upload-zone {
-  border: 1px dashed rgba(108,99,255,0.25);
-  border-radius: 6px;
-  height: 180px; overflow-y: auto;
+  border: 1px dashed rgba(59,130,246,0.25);
+  border-radius: 8px;
+  min-height: 200px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  background: rgba(8,8,16,0.6);
+  background: rgba(6,8,20,0.5);
   transition: border-color .2s, background .2s;
+  overflow-y: auto;
 }
 .upload-zone:hover,
 .upload-zone.drag-over {
-  border-color: rgba(108,99,255,0.6);
-  background: rgba(108,99,255,0.05);
+  border-color: rgba(59,130,246,0.6);
+  background: rgba(59,130,246,0.04);
 }
 .upload-placeholder { text-align: center; }
 .upload-icon {
   width: 36px; height: 36px;
-  border: 1px solid rgba(108,99,255,0.3);
-  border-radius: 6px;
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 12px;
-  color: #6C63FF; font-size: 1.1rem;
+  margin: 0 auto 14px;
+  color: var(--acc1); font-size: 1.1rem;
 }
-.upload-title { font-size: 0.88rem; font-weight: 500; color: #8888AA; margin-bottom: 5px; }
-.upload-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #55556A; }
+.upload-title { font-size: 0.88rem; font-weight: 500; color: var(--txt2); margin-bottom: 5px; }
+.upload-hint { font-family: var(--mono); font-size: 0.7rem; color: var(--txt3); }
 
-.file-list { width: 100%; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.file-list { width: 100%; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
 .file-item {
-  display: flex; align-items: center;
-  background: rgba(108,99,255,0.08);
-  border: 1px solid rgba(108,99,255,0.15);
-  border-radius: 5px; padding: 7px 12px;
-  font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: #8888AA;
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(59,130,246,0.07);
+  border: 1px solid rgba(59,130,246,0.15);
+  border-radius: 6px; padding: 8px 12px;
+  font-family: var(--mono); font-size: 0.8rem; color: var(--txt2);
 }
-.file-name { flex: 1; margin: 0 10px; color: #F0F0FF; }
+.file-name { flex: 1; color: var(--txt); }
 .remove-btn {
   background: none; border: none; cursor: pointer;
-  font-size: 1.1rem; color: #55556A;
+  font-size: 1.1rem; color: var(--txt3);
   transition: color .15s;
 }
-.remove-btn:hover { color: #FF4D8D; }
+.remove-btn:hover { color: var(--acc2); }
 
-.console-divider {
-  border-top: 1px solid rgba(108,99,255,0.1);
-  display: flex; align-items: center;
-  padding: 0 24px;
-}
-.console-divider span {
-  position: relative; top: -0.5em;
-  background: #0F0F1A;
-  padding: 0 10px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.68rem; color: #55556A; letter-spacing: 1.5px;
-}
-
-.input-wrap { position: relative; }
-.code-input {
+/* Prompt */
+.prompt-wrap { position: relative; }
+.prompt-input {
   width: 100%;
-  background: rgba(8,8,16,0.6);
-  border: 1px solid rgba(108,99,255,0.2);
-  border-radius: 6px;
+  background: rgba(6,8,20,0.5);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 8px;
   padding: 16px 18px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.88rem; line-height: 1.7;
-  color: #F0F0FF;
+  font-family: var(--mono);
+  font-size: 0.86rem; line-height: 1.7;
+  color: var(--txt);
   resize: vertical; outline: none;
-  min-height: 140px;
+  min-height: 200px;
   transition: border-color .2s;
 }
-.code-input::placeholder { color: #55556A; }
-.code-input:focus { border-color: rgba(108,99,255,0.5); }
-.model-badge {
+.prompt-input::placeholder { color: var(--txt3); }
+.prompt-input:focus { border-color: rgba(59,130,246,0.5); }
+.engine-badge {
   position: absolute; bottom: 10px; right: 12px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.67rem; color: #55556A;
+  font-family: var(--mono);
+  font-size: 0.65rem; color: var(--txt3);
 }
 
-.btn-section { padding: 0 24px 24px; }
+/* CTA */
+.cta-row {
+  padding: 24px 32px 32px;
+  border-top: 1px solid rgba(59,130,246,0.08);
+}
 .start-btn {
   width: 100%;
-  background: linear-gradient(90deg, #6C63FF 0%, #8B5CF6 50%, #FF4D8D 100%);
+  background: linear-gradient(90deg, #1D4ED8 0%, #3B82F6 50%, #0EA5E9 100%);
   color: #fff; border: none;
-  border-radius: 7px; padding: 18px 24px;
-  font-family: 'Unbounded', sans-serif;
+  border-radius: 8px; padding: 18px 28px;
+  font-family: var(--display);
   font-size: 0.95rem; font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   display: flex; justify-content: space-between; align-items: center;
   cursor: pointer;
   transition: opacity .2s, transform .1s;
-  box-shadow: 0 4px 32px rgba(108,99,255,0.3);
+  box-shadow: 0 4px 32px rgba(59,130,246,0.3);
 }
 .start-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
-.start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.start-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .btn-arrow { font-size: 1.2rem; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .cases-grid { grid-template-columns: repeat(2, 1fr); }
+  .steps-row { grid-template-columns: repeat(3, 1fr); row-gap: 32px; }
+  .steps-row::before { display: none; }
+}
 @media (max-width: 1024px) {
-  .hero { flex-direction: column; gap: 40px; }
+  .hero { flex-direction: column; gap: 48px; }
   .hero-right { display: none; }
-  .dashboard { flex-direction: column; }
-  .steps-panel { flex: none; width: 100%; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-col:first-child { border-right: none; border-bottom: 1px solid rgba(59,130,246,0.1); }
 }
 @media (max-width: 640px) {
-  .main-wrap { padding: 40px 20px 60px; }
+  .main-wrap { padding: 48px 20px 64px; }
   .navbar { padding: 0 20px; }
   .hero-title { font-size: 2rem; }
+  .cases-grid { grid-template-columns: 1fr; }
+  .steps-row { grid-template-columns: 1fr 1fr; }
+  .hero-kpi { flex-wrap: wrap; gap: 20px; }
 }
 </style>
