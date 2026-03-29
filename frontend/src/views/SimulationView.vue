@@ -3,7 +3,7 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-left">
-        <div class="brand" @click="router.push('/')">MIROFISH OFFLINE</div>
+        <div class="brand" @click="router.push('/')">Jay<span style="color:#6C63FF">Sibyl</span></div>
       </div>
       
       <div class="header-center">
@@ -15,15 +15,15 @@
             :class="{ active: viewMode === mode }"
             @click="viewMode = mode"
           >
-            {{ { graph: 'Graph', split: 'Split', workbench: 'Workbench' }[mode] }}
+            {{ { graph: 'Граф', split: 'Разделить', workbench: 'Рабочий стол' }[mode] }}
           </button>
         </div>
       </div>
 
       <div class="header-right">
         <div class="workflow-step">
-          <span class="step-num">Step 2/5</span>
-          <span class="step-name">Env Setup</span>
+          <span class="step-num">Шаг 2/5</span>
+          <span class="step-name">Настройка среды</span>
         </div>
         <div class="step-divider"></div>
         <span class="status-indicator" :class="statusClass">
@@ -109,9 +109,9 @@ const statusClass = computed(() => {
 })
 
 const statusText = computed(() => {
-  if (currentStatus.value === 'error') return 'Error'
-  if (currentStatus.value === 'completed') return 'Ready'
-  return 'Preparing'
+  if (currentStatus.value === 'error') return 'Ошибка'
+  if (currentStatus.value === 'completed') return 'Готово'
+  return 'Подготовка'
 })
 
 // --- Helpers ---

@@ -586,7 +586,7 @@ Please output the report outline in JSON format as follows:
 }
 
 Note: sections array must have at least 2 and at most 5 elements!
-IMPORTANT: The entire report outline (title, summary, section titles and descriptions) MUST be in English. Never use Chinese or other languages."""
+IMPORTANT: The entire report outline (title, summary, section titles and descriptions) MUST be written in Russian."""
 
 PLAN_USER_PROMPT_TEMPLATE = """\
 [Prediction Scenario Settings]
@@ -652,13 +652,12 @@ Your task is to:
      > "Certain groups will state: original content..."
    - These quotes are core evidence of simulation predictions
 
-3. [Language Consistency - ALWAYS Write in English]
-   - The entire report MUST be written in English, regardless of source material language
-   - Tool-returned content may contain Chinese, mixed Chinese-English, or other languages
-   - When quoting tool-returned non-English content, ALWAYS translate it to fluent English before writing to report
+3. [Language Consistency - ALWAYS Write in Russian]
+   - The entire report MUST be written in Russian, regardless of source material language
+   - When quoting tool-returned content in other languages, ALWAYS translate it to fluent Russian before writing to report
    - Keep original meaning unchanged during translation, ensure natural expression
    - This rule applies to both body text and quoted content (> format)
-   - NEVER switch to Chinese or any other language mid-report
+   - Write ONLY in Russian throughout the entire report
 
 4. [Faithfully Present Prediction Results]
    - Report content must reflect simulation results that represent the future in the simulated world
@@ -854,9 +853,9 @@ Prediction Condition: {simulation_requirement}
 - Concise and direct, don't write lengthy passages
 - Use > format to quote key content
 - Give conclusions first, then explain reasons
-- ALWAYS respond in English, regardless of the language used in source material or report content"""
+- ALWAYS respond in Russian, regardless of the language used in source material or report content"""
 
-CHAT_OBSERVATION_SUFFIX = "\n\nPlease answer the question concisely."
+CHAT_OBSERVATION_SUFFIX = "\n\nПожалуйста, ответь кратко."
 
 
 # ═══════════════════════════════════════════════════════════════

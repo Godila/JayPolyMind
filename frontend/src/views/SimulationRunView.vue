@@ -3,7 +3,7 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-left">
-        <div class="brand" @click="router.push('/')">MIROFISH OFFLINE</div>
+        <div class="brand" @click="router.push('/')">Jay<span style="color:#6C63FF">Sibyl</span></div>
       </div>
       
       <div class="header-center">
@@ -15,15 +15,15 @@
             :class="{ active: viewMode === mode }"
             @click="viewMode = mode"
           >
-            {{ { graph: 'Graph', split: 'Split', workbench: 'Workbench' }[mode] }}
+            {{ { graph: 'Граф', split: 'Разделить', workbench: 'Рабочий стол' }[mode] }}
           </button>
         </div>
       </div>
 
       <div class="header-right">
         <div class="workflow-step">
-          <span class="step-num">Step 3/5</span>
-          <span class="step-name">Simulation</span>
+          <span class="step-num">Шаг 3/5</span>
+          <span class="step-name">Симуляция</span>
         </div>
         <div class="step-divider"></div>
         <span class="status-indicator" :class="statusClass">
@@ -115,9 +115,9 @@ const statusClass = computed(() => {
 })
 
 const statusText = computed(() => {
-  if (currentStatus.value === 'error') return 'Error'
-  if (currentStatus.value === 'completed') return 'Completed'
-  return 'Running'
+  if (currentStatus.value === 'error') return 'Ошибка'
+  if (currentStatus.value === 'completed') return 'Завершено'
+  return 'Выполняется'
 })
 
 const isSimulating = computed(() => currentStatus.value === 'processing')

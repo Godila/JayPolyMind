@@ -8,7 +8,7 @@
           <!-- Report Header -->
           <div class="report-header-block">
             <div class="report-meta">
-              <span class="report-tag">Prediction Report</span>
+              <span class="report-tag">Прогнозный отчёт</span>
               <span class="report-id">ID: {{ reportId || 'REF-2024-X92' }}</span>
             </div>
             <h1 class="main-title">{{ reportOutline.title }}</h1>
@@ -58,7 +58,7 @@
                       <path d="M12 2a10 10 0 0 1 10 10" stroke-width="4" stroke="#4B5563" stroke-linecap="round"></path>
                     </svg>
                   </div>
-                  <span class="loading-text">Generating {{ section.title }}...</span>
+                  <span class="loading-text">Генерация {{ section.title }}...</span>
                 </div>
               </div>
             </div>
@@ -72,7 +72,7 @@
             <div class="waiting-ring"></div>
             <div class="waiting-ring"></div>
           </div>
-          <span class="waiting-text">Waiting for Report Agent...</span>
+          <span class="waiting-text">Ожидание ReportAgent...</span>
         </div>
       </div>
 
@@ -89,15 +89,15 @@
         <div class="workflow-overview" v-if="agentLogs.length > 0 || reportOutline">
           <div class="workflow-metrics">
             <div class="metric">
-              <span class="metric-label">Sections</span>
+              <span class="metric-label">Разделы</span>
               <span class="metric-value mono">{{ completedSections }}/{{ totalSections }}</span>
             </div>
             <div class="metric">
-              <span class="metric-label">Elapsed</span>
+              <span class="metric-label">Прошло</span>
               <span class="metric-value mono">{{ formatElapsedTime }}</span>
             </div>
             <div class="metric">
-              <span class="metric-label">Tools</span>
+              <span class="metric-label">Инструменты</span>
               <span class="metric-value mono">{{ totalToolCalls }}</span>
             </div>
             <div class="metric metric-right">
@@ -309,10 +309,10 @@
                     <div class="llm-meta">
                       <span class="meta-tag">Iteration {{ log.details?.iteration }}</span>
                       <span class="meta-tag" :class="{ active: log.details?.has_tool_calls }">
-                        Tools: {{ log.details?.has_tool_calls ? 'Yes' : 'No' }}
+                        Инструменты: {{ log.details?.has_tool_calls ? 'Да' : 'Нет' }}
                       </span>
                       <span class="meta-tag" :class="{ active: log.details?.has_final_answer, 'final-answer': log.details?.has_final_answer }">
-                        Final: {{ log.details?.has_final_answer ? 'Yes' : 'No' }}
+                        Финал: {{ log.details?.has_final_answer ? 'Да' : 'Нет' }}
                       </span>
                     </div>
                     <!-- Show special hint when it's the final answer -->

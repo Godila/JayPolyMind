@@ -6,32 +6,32 @@
         <div class="card-header">
           <div class="step-info">
             <span class="step-num">01</span>
-            <span class="step-title">Ontology Generation</span>
+            <span class="step-title">Генерация онтологии</span>
           </div>
           <div class="step-status">
-            <span v-if="currentPhase > 0" class="badge success">Completed</span>
-            <span v-else-if="currentPhase === 0" class="badge processing">Generating</span>
-            <span v-else class="badge pending">Waiting</span>
+            <span v-if="currentPhase > 0" class="badge success">Завершено</span>
+            <span v-else-if="currentPhase === 0" class="badge processing">Генерация</span>
+            <span v-else class="badge pending">Ожидание</span>
           </div>
         </div>
         
         <div class="card-content">
           <p class="api-note">POST /api/graph/ontology/generate</p>
           <p class="description">
-            LLM analyzes document content and simulation requirements, extracts reality seeds, and automatically generates appropriate ontology structures
+            LLM анализирует содержимое документа и требования к симуляции, извлекает смысловые зёрна и автоматически генерирует структуры онтологии
           </p>
 
           <!-- Loading / Progress -->
           <div v-if="currentPhase === 0 && ontologyProgress" class="progress-section">
             <div class="spinner-sm"></div>
-            <span>{{ ontologyProgress.message || 'Analyzing documents...' }}</span>
+            <span>{{ ontologyProgress.message || 'Анализ документов...' }}</span>
           </div>
 
           <!-- Detail Overlay -->
           <div v-if="selectedOntologyItem" class="ontology-detail-overlay">
             <div class="detail-header">
                <div class="detail-title-group">
-                  <span class="detail-type-badge">{{ selectedOntologyItem.itemType === 'entity' ? 'ENTITY' : 'RELATION' }}</span>
+                  <span class="detail-type-badge">{{ selectedOntologyItem.itemType === 'entity' ? 'СУЩНОСТЬ' : 'СВЯЗЬ' }}</span>
                   <span class="detail-name">{{ selectedOntologyItem.name }}</span>
                </div>
                <button class="close-btn" @click="selectedOntologyItem = null">×</button>
@@ -41,7 +41,7 @@
                
                <!-- Attributes -->
                <div class="detail-section" v-if="selectedOntologyItem.attributes?.length">
-                  <span class="section-label">ATTRIBUTES</span>
+                  <span class="section-label">АТРИБУТЫ</span>
                   <div class="attr-list">
                      <div v-for="attr in selectedOntologyItem.attributes" :key="attr.name" class="attr-item">
                         <span class="attr-name">{{ attr.name }}</span>
@@ -53,7 +53,7 @@
 
                <!-- Examples (Entity) -->
                <div class="detail-section" v-if="selectedOntologyItem.examples?.length">
-                  <span class="section-label">EXAMPLES</span>
+                  <span class="section-label">ПРИМЕРЫ</span>
                   <div class="example-list">
                      <span v-for="ex in selectedOntologyItem.examples" :key="ex" class="example-tag">{{ ex }}</span>
                   </div>
@@ -61,7 +61,7 @@
 
                <!-- Source/Target (Relation) -->
                <div class="detail-section" v-if="selectedOntologyItem.source_targets?.length">
-                  <span class="section-label">CONNECTIONS</span>
+                  <span class="section-label">СВЯЗИ</span>
                   <div class="conn-list">
                      <div v-for="(conn, idx) in selectedOntologyItem.source_targets" :key="idx" class="conn-item">
                         <span class="conn-node">{{ conn.source }}</span>
@@ -75,7 +75,7 @@
 
           <!-- Generated Entity Tags -->
           <div v-if="projectData?.ontology?.entity_types" class="tags-container" :class="{ 'dimmed': selectedOntologyItem }">
-            <span class="tag-label">GENERATED ENTITY TYPES</span>
+            <span class="tag-label">ТИПЫ СУЩНОСТЕЙ</span>
             <div class="tags-list">
               <span 
                 v-for="entity in projectData.ontology.entity_types" 
@@ -90,7 +90,7 @@
 
           <!-- Generated Relation Tags -->
           <div v-if="projectData?.ontology?.edge_types" class="tags-container" :class="{ 'dimmed': selectedOntologyItem }">
-            <span class="tag-label">GENERATED RELATION TYPES</span>
+            <span class="tag-label">ТИПЫ СВЯЗЕЙ</span>
             <div class="tags-list">
               <span 
                 v-for="rel in projectData.ontology.edge_types" 
@@ -110,30 +110,30 @@
         <div class="card-header">
           <div class="step-info">
             <span class="step-num">02</span>
-            <span class="step-title">GraphRAG Build</span>
+            <span class="step-title">Построение GraphRAG</span>
           </div>
           <div class="step-status">
-            <span v-if="currentPhase > 1" class="badge success">Completed</span>
+            <span v-if="currentPhase > 1" class="badge success">Завершено</span>
             <span v-else-if="currentPhase === 1" class="badge processing">{{ buildProgress?.progress || 0 }}%</span>
-            <span v-else class="badge pending">Waiting</span>
+            <span v-else class="badge pending">Ожидание</span>
           </div>
         </div>
 
         <div class="card-content">
           <p class="api-note">POST /api/graph/build</p>
           <p class="description">
-            Based on the generated ontology, automatically chunk documents and invoke Neo4j to build knowledge graphs, extract entities and relationships, and form temporal memory and community summaries
+            На основе сгенерированной онтологии автоматически разбивает документы на фрагменты и строит граф знаний Neo4j, извлекает сущности и связи
           </p>
           
           <!-- Stats Cards -->
           <div class="stats-grid">
             <div class="stat-card">
               <span class="stat-value">{{ graphStats.nodes }}</span>
-              <span class="stat-label">Entity Nodes</span>
+              <span class="stat-label">Узлы сущностей</span>
             </div>
             <div class="stat-card">
               <span class="stat-value">{{ graphStats.edges }}</span>
-              <span class="stat-label">Relation Edges</span>
+              <span class="stat-label">Рёбра связей</span>
             </div>
             <div class="stat-card">
               <span class="stat-value">{{ graphStats.types }}</span>
@@ -148,23 +148,23 @@
         <div class="card-header">
           <div class="step-info">
             <span class="step-num">03</span>
-            <span class="step-title">Build Complete</span>
+            <span class="step-title">Построение завершено</span>
           </div>
           <div class="step-status">
-            <span v-if="currentPhase >= 2" class="badge accent">In Progress</span>
+            <span v-if="currentPhase >= 2" class="badge accent">Активно</span>
           </div>
         </div>
         
         <div class="card-content">
           <p class="api-note">POST /api/simulation/create</p>
-          <p class="description">Graph build is complete. Please proceed to the next step to set up the simulation environment</p>
-          <button 
-            class="action-btn" 
+          <p class="description">Граф построен. Перейдите к следующему шагу для настройки среды симуляции</p>
+          <button
+            class="action-btn"
             :disabled="currentPhase < 2 || creatingSimulation"
             @click="handleEnterEnvSetup"
           >
             <span v-if="creatingSimulation" class="spinner-sm"></span>
-            {{ creatingSimulation ? 'Creating...' : 'Enter Environment Setup ➝' }}
+            {{ creatingSimulation ? 'Создание...' : 'Перейти к настройке среды ➝' }}
           </button>
         </div>
       </div>
@@ -173,7 +173,7 @@
     <!-- Bottom Info / Logs -->
     <div class="system-logs">
       <div class="log-header">
-        <span class="log-title">SYSTEM DASHBOARD</span>
+        <span class="log-title">СИСТЕМНЫЙ ЖУРНАЛ</span>
         <span class="log-id">{{ projectData?.project_id || 'NO_PROJECT' }}</span>
       </div>
       <div class="log-content" ref="logContent">

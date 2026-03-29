@@ -615,7 +615,7 @@ class OasisProfileGenerator:
     
     def _get_system_prompt(self, is_individual: bool) -> str:
         """Get system prompt"""
-        base_prompt = "You are an expert in generating social media user profiles. Generate detailed, realistic personas for opinion simulation that maximize restoration of existing reality. Must return valid JSON format with all string values containing no unescaped newlines. Use English."
+        base_prompt = "You are an expert in generating social media user profiles. Generate detailed, realistic personas for opinion simulation that maximize restoration of existing reality. Must return valid JSON format with all string values containing no unescaped newlines. Use Russian. Write all text fields in Russian."
         return base_prompt
     
     def _build_individual_persona_prompt(
@@ -655,14 +655,14 @@ Please generate JSON containing the following fields:
 3. age: Age as number (must be integer)
 4. gender: Gender, must be in English: "male" or "female"
 5. mbti: MBTI type (e.g., INTJ, ENFP)
-6. country: Country (use English, e.g., "US")
+6. country: Страна (по-русски, например "Россия")
 7. profession: Profession
 8. interested_topics: Array of interested topics
 
 Important:
 - All field values must be strings or numbers, do not use newlines
 - persona must be a coherent text description
-- Use English
+- Use Russian for all text fields
 - Content must be consistent with entity information
 - age must be a valid integer, gender must be "male" or "female"
 """
@@ -704,14 +704,14 @@ Please generate JSON containing the following fields:
 3. age: Fixed at 30 (virtual age of institutional account)
 4. gender: Fixed at "other" (institutional account uses other to denote non-individual)
 5. mbti: MBTI type used to describe account style, e.g., ISTJ represents rigorous conservative
-6. country: Country (use English, e.g., "US")
+6. country: Страна (по-русски, например "Россия")
 7. profession: Institutional function description
 8. interested_topics: Array of focus areas
 
 Important:
 - All field values must be strings or numbers, no null values allowed
 - persona must be a coherent text description, do not use newlines
-- Use English
+- Use Russian for all text fields
 - age must be integer 30, gender must be string "other"
 - Institutional account speech must match its identity positioning"""
     

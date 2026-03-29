@@ -3,7 +3,7 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-left">
-        <div class="brand" @click="router.push('/')">MIROFISH OFFLINE</div>
+        <div class="brand" @click="router.push('/')">Jay<span style="color:#6C63FF">Sibyl</span></div>
       </div>
       
       <div class="header-center">
@@ -15,14 +15,14 @@
             :class="{ active: viewMode === mode }"
             @click="viewMode = mode"
           >
-            {{ { graph: 'Graph', split: 'Split', workbench: 'Workbench' }[mode] }}
+            {{ { graph: 'Граф', split: 'Разделить', workbench: 'Рабочий стол' }[mode] }}
           </button>
         </div>
       </div>
 
       <div class="header-right">
         <div class="workflow-step">
-          <span class="step-num">Step {{ currentStep }}/5</span>
+          <span class="step-num">Шаг {{ currentStep }}/5</span>
           <span class="step-name">{{ stepNames[currentStep - 1] }}</span>
         </div>
         <div class="step-divider"></div>
@@ -91,7 +91,7 @@ const viewMode = ref('split') // graph | split | workbench
 
 // Step State
 const currentStep = ref(1) // 1: Graph Build, 2: Env Setup, 3: Simulation, 4: Report, 5: Interaction
-const stepNames = ['Graph Build', 'Env Setup', 'Simulation', 'Report', 'Interaction']
+const stepNames = ['Построение графа', 'Настройка среды', 'Симуляция', 'Отчёт', 'Взаимодействие']
 
 // Data State
 const currentProjectId = ref(route.params.projectId)
@@ -130,11 +130,11 @@ const statusClass = computed(() => {
 })
 
 const statusText = computed(() => {
-  if (error.value) return 'Error'
-  if (currentPhase.value >= 2) return 'Ready'
-  if (currentPhase.value === 1) return 'Building Graph'
-  if (currentPhase.value === 0) return 'Generating Ontology'
-  return 'Initializing'
+  if (error.value) return 'Ошибка'
+  if (currentPhase.value >= 2) return 'Готово'
+  if (currentPhase.value === 1) return 'Построение графа'
+  if (currentPhase.value === 0) return 'Генерация онтологии'
+  return 'Инициализация'
 })
 
 // --- Helpers ---
