@@ -288,18 +288,17 @@ const startSimulation = () => {
   height: 68px;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 52px;
-  border-bottom: 1px solid rgba(59,130,246,0.1);
-  background: rgba(6,8,20,0.88);
-  backdrop-filter: blur(16px);
+  border-bottom: 1px solid #EAEAEA;
+  background: #FFFFFF;
 }
-.nav-brand { display: flex; align-items: center; gap: 14px; }
+.nav-brand { display: flex; align-items: center; gap: 12px; }
 .nav-logo { object-fit: contain; }
 .brand-name {
-  font-family: var(--display);
-  font-size: 1.1rem; font-weight: 700;
-  letter-spacing: -0.3px; color: var(--txt);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.05rem; font-weight: 800;
+  letter-spacing: 0.5px; color: #111111;
 }
-.brand-poly { color: var(--acc2); }
+.brand-poly { color: #38BDF8; }
 .nav-right { display: flex; align-items: center; gap: 20px; }
 .nav-badge {
   font-family: var(--mono);
