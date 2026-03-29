@@ -293,7 +293,7 @@ const startSimulation = () => {
   backdrop-filter: blur(16px);
 }
 .nav-brand { display: flex; align-items: center; gap: 14px; }
-.nav-logo { object-fit: contain; mix-blend-mode: screen; }
+.nav-logo { object-fit: contain; }
 .brand-name {
   font-family: var(--display);
   font-size: 1.1rem; font-weight: 700;
@@ -412,7 +412,6 @@ const startSimulation = () => {
   object-fit: contain;
   animation: float 6s ease-in-out infinite;
   filter: drop-shadow(0 0 48px rgba(59,130,246,0.35));
-  mix-blend-mode: screen;
 }
 @keyframes float {
   0%,100% { transform: translateY(0); }
