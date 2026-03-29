@@ -13,12 +13,7 @@
         <img src="/logo.png" height="36" class="nav-logo" alt="JayPolyMind">
         <span class="brand-name">Jay<span class="brand-poly">Poly</span>Mind</span>
       </div>
-      <div class="nav-right">
-        <span class="nav-badge">v0.2 · Early Access</span>
-        <a href="https://github.com/Godila/MiroFish-My" target="_blank" class="nav-link">
-          GitHub <span class="link-arrow">↗</span>
-        </a>
-      </div>
+      <div class="nav-right"></div>
     </nav>
 
     <main class="main-wrap">
@@ -298,7 +293,7 @@ const startSimulation = () => {
   backdrop-filter: blur(16px);
 }
 .nav-brand { display: flex; align-items: center; gap: 14px; }
-.nav-logo { object-fit: contain; }
+.nav-logo { object-fit: contain; mix-blend-mode: screen; }
 .brand-name {
   font-family: var(--display);
   font-size: 1.1rem; font-weight: 700;
@@ -417,6 +412,7 @@ const startSimulation = () => {
   object-fit: contain;
   animation: float 6s ease-in-out infinite;
   filter: drop-shadow(0 0 48px rgba(59,130,246,0.35));
+  mix-blend-mode: screen;
 }
 @keyframes float {
   0%,100% { transform: translateY(0); }
