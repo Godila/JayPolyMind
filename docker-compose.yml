@@ -1,5 +1,5 @@
 services:
-  mirofish:
+  jaypolymind:
     build: .
     expose:
       - "3000"
@@ -30,7 +30,7 @@ services:
     volumes:
       - ./backend/uploads:/app/backend/uploads
     networks:
-      - mirofish-internal
+      - jaypolymind-internal
       - dokploy-network
     restart: unless-stopped
 
@@ -51,7 +51,7 @@ services:
       retries: 10
       start_period: 30s
     networks:
-      - mirofish-internal
+      - jaypolymind-internal
     restart: unless-stopped
 
 volumes:
@@ -59,7 +59,7 @@ volumes:
   neo4j_logs:
 
 networks:
-  mirofish-internal:
+  jaypolymind-internal:
     driver: bridge
   dokploy-network:
     external: true

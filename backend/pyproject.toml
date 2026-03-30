@@ -1,11 +1,11 @@
 [project]
-name = "mirofish-offline-backend"
+name = "jaypolymind-backend"
 version = "0.2.0"
-description = "MiroFish-Offline - Offline-first fork running on Neo4j + Ollama"
+description = "JayPolyMind - Local-first swarm intelligence engine (Neo4j + Ollama)"
 requires-python = ">=3.11"
 license = { text = "AGPL-3.0" }
 authors = [
-    { name = "MiroFish Team" }
+    { name = "JayPolyMind Team" }
 ]
 
 dependencies = [

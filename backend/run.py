@@ -1,5 +1,5 @@
 """
-MiroFish Backend Entry Point
+JayPolyMind Backend Entry Point
 """
 
 import os

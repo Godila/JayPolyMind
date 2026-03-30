@@ -22,7 +22,7 @@ from ..config import Config
 from ..utils.logger import get_logger
 from .entity_reader import EntityNode
 
-logger = get_logger('mirofish.simulation_config')
+logger = get_logger('jaypolymind.simulation_config')
 
 # Time zone configuration for Russian work schedules (Moscow Time, UTC+3)
 CHINA_TIMEZONE_CONFIG = {
