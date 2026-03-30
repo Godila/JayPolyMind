@@ -13,7 +13,9 @@
         <img src="/logo.png" height="36" class="nav-logo" alt="JayPolyMind">
         <span class="brand-name">Jay<span class="brand-poly">Poly</span>Mind</span>
       </div>
-      <div class="nav-right"></div>
+      <div class="nav-right">
+        <button class="nav-login-btn" @click="goToApp">Войти →</button>
+      </div>
     </nav>
 
     <!-- ── HERO: full-bleed split ───────────────────────────────────────── -->
@@ -99,83 +101,27 @@
         </div>
       </section>
 
-      <!-- ── LAUNCH FORM ────────────────────────────────────────────────── -->
-      <section class="launch-section">
-        <div class="launch-head">
-          <h2 class="launch-title">Запустить симуляцию</h2>
-          <p class="launch-sub">Загрузите документ с описанием контекста и задайте исследовательский вопрос.</p>
-        </div>
-        <div class="launch-card">
-          <div class="form-grid">
-            <!-- Upload -->
-            <div class="form-col">
-              <div class="field-hdr">
-                <span class="field-label">01 / Исходная документация</span>
-                <span class="field-hint">PDF · MD · TXT</span>
-              </div>
-              <div
-                class="upload-zone"
-                :class="{ 'drag-over': isDragOver }"
-                @dragover.prevent="handleDragOver"
-                @dragleave.prevent="handleDragLeave"
-                @drop.prevent="handleDrop"
-                @click="triggerFileInput"
-              >
-                <input ref="fileInput" type="file" multiple accept=".pdf,.md,.txt"
-                  @change="handleFileSelect" style="display:none" :disabled="loading" />
-                <div v-if="files.length === 0" class="upload-placeholder">
-                  <div class="upload-icon">↑</div>
-                  <div class="upload-title">Перетащите документы сюда</div>
-                  <div class="upload-hint">или нажмите для выбора</div>
-                </div>
-                <div v-else class="file-list">
-                  <div v-for="(file, index) in files" :key="index" class="file-item">
-                    <span class="file-icon">📄</span>
-                    <span class="file-name">{{ file.name }}</span>
-                    <button @click.stop="removeFile(index)" class="remove-btn">×</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Prompt -->
-            <div class="form-col">
-              <div class="field-hdr">
-                <span class="field-label">&gt;_ 02 / Исследовательский вопрос</span>
-              </div>
-              <div class="prompt-wrap">
-                <textarea
-                  v-model="formData.simulationRequirement"
-                  class="prompt-input"
-                  placeholder="Например: «Как сотрудники и профсоюзы отреагируют на переход к четырёхдневной рабочей неделе в производственном секторе?»"
-                  rows="7"
-                  :disabled="loading"
-                ></textarea>
-                <div class="engine-badge">Движок: LLM + Neo4j</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="cta-row">
-            <button class="start-btn" @click="startSimulation" :disabled="!canSubmit || loading">
-              <span>{{ loading ? 'Инициализация...' : 'Запустить симуляцию' }}</span>
-              <span class="btn-arrow">→</span>
-            </button>
-          </div>
+      <!-- ── CTA ──────────────────────────────────────────────────────────── -->
+      <section class="cta-section">
+        <div class="cta-inner">
+          <span class="section-eyebrow">Готовы к запуску?</span>
+          <h2 class="cta-title">Начните симуляцию прямо сейчас</h2>
+          <p class="cta-desc">Войдите в платформу, загрузите документы и получите аналитику за часы.</p>
+          <button class="cta-btn" @click="goToApp">
+            <span>Войти в приложение</span>
+            <span class="btn-arrow">→</span>
+          </button>
         </div>
       </section>
-
-      <HistoryDatabase />
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import HistoryDatabase from '../components/HistoryDatabase.vue'
+import { isAuthenticated } from '../store/auth.js'
 
-// ── Data ───────────────────────────────────────────────────────────────────
+// ── Static data ────────────────────────────────────────────────────────────
 
 const useCases = [
   {
@@ -204,39 +150,13 @@ const steps = [
   { num: '05', title: 'Углублённый диалог',  desc: 'Уточняйте результаты в диалоге с любым агентом или с ReportAgent' },
 ]
 
-// ── Logic ──────────────────────────────────────────────────────────────────
+// ── Navigation ─────────────────────────────────────────────────────────────
 
-const router     = useRouter()
-const formData   = ref({ simulationRequirement: '' })
-const files      = ref([])
-const loading    = ref(false)
-const isDragOver = ref(false)
-const fileInput  = ref(null)
+const router = useRouter()
 
-const canSubmit = computed(() =>
-  formData.value.simulationRequirement.trim() !== '' && files.value.length > 0
-)
-
-const triggerFileInput = () => { if (!loading.value) fileInput.value?.click() }
-const handleFileSelect = (e) => addFiles(Array.from(e.target.files))
-const handleDragOver   = () => { isDragOver.value = true }
-const handleDragLeave  = () => { isDragOver.value = false }
-const handleDrop       = (e) => { isDragOver.value = false; addFiles(Array.from(e.dataTransfer.files)) }
-
-const addFiles = (newFiles) => {
-  const allowed = ['.pdf', '.md', '.txt']
-  const valid = newFiles.filter(f => allowed.some(ext => f.name.toLowerCase().endsWith(ext)))
-  files.value = [...files.value, ...valid]
-}
-
-const removeFile = (index) => { files.value.splice(index, 1) }
-
-const startSimulation = () => {
-  if (!canSubmit.value || loading.value) return
-  import('../store/pendingUpload.js').then(({ setPendingUpload }) => {
-    setPendingUpload(files.value, formData.value.simulationRequirement)
-    router.push({ name: 'Process', params: { projectId: 'new' } })
-  })
+function goToApp() {
+  // If already logged in → go straight to app, otherwise → login
+  router.push(isAuthenticated() ? { name: 'App' } : { name: 'Login' })
 }
 </script>
 
@@ -304,6 +224,14 @@ const startSimulation = () => {
 }
 .brand-poly { color: #38BDF8; }
 .nav-right { display: flex; align-items: center; gap: 20px; }
+.nav-login-btn {
+  font-family: var(--mono); font-size: 0.8rem;
+  color: #1D4ED8; background: rgba(29,78,216,0.06);
+  border: 1px solid rgba(29,78,216,0.25);
+  border-radius: 6px; padding: 7px 18px; cursor: pointer;
+  transition: all .2s; font-weight: 600;
+}
+.nav-login-btn:hover { background: rgba(29,78,216,0.12); border-color: #1D4ED8; }
 .nav-badge {
   font-family: var(--mono);
   font-size: 0.7rem; color: var(--txt3);
@@ -571,130 +499,41 @@ const startSimulation = () => {
 }
 .step-detail { font-size: 0.78rem; color: var(--txt2); line-height: 1.6; }
 
-/* ── LAUNCH SECTION ──────────────────────────────────────────────────────── */
-.launch-section {
-  padding: 72px 0 0;
+/* ── CTA SECTION ─────────────────────────────────────────────────────────── */
+.cta-section {
+  padding: 80px 0 0;
   border-top: 1px solid rgba(59,130,246,0.1);
 }
-.launch-head { margin-bottom: 40px; }
-.launch-title {
-  font-family: var(--display);
-  font-size: clamp(1.5rem, 2.5vw, 2rem);
-  font-weight: 700; color: var(--txt);
-  letter-spacing: -0.5px; margin-bottom: 10px;
-}
-.launch-sub { font-size: 0.95rem; color: var(--txt2); }
-
-.launch-card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  overflow: hidden;
-}
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-}
-.form-col { padding: 28px 32px; }
-.form-col:first-child { border-right: 1px solid rgba(59,130,246,0.1); }
-
-.field-hdr {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 14px;
-  font-family: var(--mono); font-size: 0.72rem;
-  color: var(--txt3); letter-spacing: 0.5px;
-}
-.field-label { color: var(--txt3); }
-.field-hint { color: var(--txt2); }
-
-/* Upload zone */
-.upload-zone {
-  border: 1px dashed rgba(59,130,246,0.25);
-  border-radius: 8px;
-  min-height: 200px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  background: rgba(6,8,20,0.5);
-  transition: border-color .2s, background .2s;
-  overflow-y: auto;
-}
-.upload-zone:hover,
-.upload-zone.drag-over {
-  border-color: rgba(59,130,246,0.6);
-  background: rgba(59,130,246,0.04);
-}
-.upload-placeholder { text-align: center; }
-.upload-icon {
-  width: 36px; height: 36px;
-  border: 1px solid rgba(59,130,246,0.3);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 14px;
-  color: var(--acc1); font-size: 1.1rem;
-}
-.upload-title { font-size: 0.88rem; font-weight: 500; color: var(--txt2); margin-bottom: 5px; }
-.upload-hint { font-family: var(--mono); font-size: 0.7rem; color: var(--txt3); }
-
-.file-list { width: 100%; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
-.file-item {
-  display: flex; align-items: center; gap: 10px;
-  background: rgba(59,130,246,0.07);
-  border: 1px solid rgba(59,130,246,0.15);
-  border-radius: 6px; padding: 8px 12px;
-  font-family: var(--mono); font-size: 0.8rem; color: var(--txt2);
-}
-.file-name { flex: 1; color: var(--txt); }
-.remove-btn {
-  background: none; border: none; cursor: pointer;
-  font-size: 1.1rem; color: var(--txt3);
-  transition: color .15s;
-}
-.remove-btn:hover { color: var(--acc2); }
-
-/* Prompt */
-.prompt-wrap { position: relative; }
-.prompt-input {
-  width: 100%;
-  background: rgba(6,8,20,0.5);
+.cta-inner {
+  background: linear-gradient(135deg, rgba(29,78,216,0.12) 0%, rgba(14,165,233,0.08) 100%);
   border: 1px solid rgba(59,130,246,0.2);
-  border-radius: 8px;
-  padding: 16px 18px;
-  font-family: var(--mono);
-  font-size: 0.86rem; line-height: 1.7;
-  color: var(--txt);
-  resize: vertical; outline: none;
-  min-height: 200px;
-  transition: border-color .2s;
+  border-radius: 20px;
+  padding: 60px 52px;
+  text-align: center;
 }
-.prompt-input::placeholder { color: var(--txt3); }
-.prompt-input:focus { border-color: rgba(59,130,246,0.5); }
-.engine-badge {
-  position: absolute; bottom: 10px; right: 12px;
-  font-family: var(--mono);
-  font-size: 0.65rem; color: var(--txt3);
+.cta-title {
+  font-family: var(--display);
+  font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+  font-weight: 700; color: var(--txt);
+  letter-spacing: -0.5px; margin-bottom: 16px;
 }
-
-/* CTA */
-.cta-row {
-  padding: 24px 32px 32px;
-  border-top: 1px solid rgba(59,130,246,0.08);
+.cta-desc {
+  font-size: 1rem; color: var(--txt2);
+  margin-bottom: 36px; line-height: 1.6;
 }
-.start-btn {
-  width: 100%;
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 12px;
   background: linear-gradient(90deg, #1D4ED8 0%, #3B82F6 50%, #0EA5E9 100%);
   color: #fff; border: none;
-  border-radius: 8px; padding: 18px 28px;
+  border-radius: 8px; padding: 16px 36px;
   font-family: var(--display);
   font-size: 0.95rem; font-weight: 700;
-  letter-spacing: 0.3px;
-  display: flex; justify-content: space-between; align-items: center;
   cursor: pointer;
   transition: opacity .2s, transform .1s;
-  box-shadow: 0 4px 32px rgba(59,130,246,0.3);
+  box-shadow: 0 4px 32px rgba(59,130,246,0.35);
 }
-.start-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
-.start-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.btn-arrow { font-size: 1.2rem; }
+.cta-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+.btn-arrow { font-size: 1.1rem; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 1200px) {

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getToken, logout } from '../store/auth.js'
 
 // Create axios instance
 const service = axios.create({
@@ -9,9 +10,13 @@ const service = axios.create({
   }
 })
 
-// Request interceptor
+// Request interceptor — attach Bearer token if available
 service.interceptors.request.use(
   config => {
+    const token = getToken()
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`
+    }
     return config
   },
   error => {
@@ -35,6 +40,16 @@ service.interceptors.response.use(
   },
   error => {
     console.error('Response error:', error)
+
+    // Handle 401 — token invalid/expired → force logout
+    if (error.response?.status === 401) {
+      logout()
+      // Lazy import to avoid circular dep with router
+      import('../router/index.js').then(({ default: router }) => {
+        router.push({ name: 'Login' })
+      })
+      return Promise.reject(error)
+    }
 
     // Handle timeout
     if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {

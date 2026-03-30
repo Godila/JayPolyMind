@@ -24,6 +24,12 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'mirofish-secret-key')
     DEBUG = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
 
+    # Auth configuration
+    ADMIN_LOGIN    = os.environ.get('ADMIN_LOGIN', 'admin')
+    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'changeme')
+    DEMO_LOGIN     = os.environ.get('DEMO_LOGIN', 'demo')
+    DEMO_PASSWORD  = os.environ.get('DEMO_PASSWORD', 'demo123')
+
     # JSON configuration - disable ASCII escaping to display Chinese directly (not as \uXXXX)
     JSON_AS_ASCII = False
 

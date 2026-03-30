@@ -3,17 +3,40 @@ MiroFish Backend - Flask Application Factory
 """
 
 import os
+import hmac
+import hashlib
 import warnings
 
 # Suppress multiprocessing resource_tracker warnings (from third-party libraries like transformers)
 # Must be set before all other imports
 warnings.filterwarnings("ignore", message=".*resource_tracker.*")
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from .config import Config
 from .utils.logger import setup_logger, get_logger
+
+# Paths that do NOT require a Bearer token
+_AUTH_SKIP = {'/health', '/api/auth/login'}
+
+# Same user map as in auth.py (kept in sync)
+_AUTH_USERS = {
+    'admin': ('ADMIN_LOGIN', 'ADMIN_PASSWORD'),
+    'demo':  ('DEMO_LOGIN',  'DEMO_PASSWORD'),
+}
+
+
+def _check_token(cfg, token: str) -> bool:
+    for login_key, pass_key in _AUTH_USERS.values():
+        expected = hmac.new(
+            cfg['SECRET_KEY'].encode(),
+            f"{cfg[login_key]}:{cfg[pass_key]}".encode(),
+            hashlib.sha256
+        ).hexdigest()
+        if hmac.compare_digest(token, expected):
+            return True
+    return False
 
 
 def create_app(config_class=Config):
@@ -60,6 +83,23 @@ def create_app(config_class=Config):
     if should_log_startup:
         logger.info("Simulation process cleanup function registered")
 
+    # Auth middleware — protect all /api/* except the login endpoint
+    @app.before_request
+    def verify_token():
+        # Allow OPTIONS (CORS preflight) and non-API paths through
+        if request.method == 'OPTIONS':
+            return
+        if not request.path.startswith('/api/'):
+            return
+        if request.path in _AUTH_SKIP:
+            return
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Unauthorized'}), 401
+        token = auth_header[7:]
+        if not _check_token(app.config, token):
+            return jsonify({'error': 'Unauthorized'}), 401
+
     # Request logging middleware
     @app.before_request
     def log_request():
@@ -75,7 +115,8 @@ def create_app(config_class=Config):
         return response
 
     # Register blueprints
-    from .api import graph_bp, simulation_bp, report_bp
+    from .api import graph_bp, simulation_bp, report_bp, auth_bp
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(graph_bp, url_prefix='/api/graph')
     app.register_blueprint(simulation_bp, url_prefix='/api/simulation')
     app.register_blueprint(report_bp, url_prefix='/api/report')
