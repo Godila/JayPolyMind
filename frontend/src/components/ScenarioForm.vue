@@ -99,9 +99,9 @@
                   <button
                     v-if="isDemoUser"
                     class="preview-btn"
-                    title="Просмотр содержимого"
+                    title="Просмотр содержимого файла"
                     @click.stop="previewFileContent(f)"
-                  >👁</button>
+                  >👁 просмотр</button>
                   <button @click.stop="removeFile(idx, fi)" class="remove-btn">×</button>
                 </div>
               </div>
@@ -752,17 +752,23 @@ function handleSubmit() {
 
 /* ── Preview button ──────────────────────────────────────────────────────── */
 .preview-btn {
-  background: none;
-  border: none;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 5px;
   cursor: pointer;
-  font-size: 0.85rem;
-  padding: 0 4px;
-  opacity: 0.5;
-  transition: opacity 0.15s;
+  font-size: 0.78rem;
+  padding: 2px 7px;
+  color: #38BDF8;
   flex-shrink: 0;
-  line-height: 1;
+  line-height: 1.5;
+  font-family: 'JetBrains Mono', monospace;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
 }
-.preview-btn:hover { opacity: 1; }
+.preview-btn:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: rgba(56, 189, 248, 0.6);
+}
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 860px) {

@@ -14,12 +14,27 @@
   box-sizing: border-box;
 }
 
+/* ── Global CSS variables (used by AppView and sub-components) ── */
+:root {
+  --bg:     #060814;
+  --bg2:    #0A0F1E;
+  --acc1:   #3B82F6;
+  --acc2:   #38BDF8;
+  --txt:    #EFF6FF;
+  --txt2:   #7FA4C4;
+  --txt3:   #3A5570;
+  --border: rgba(59,130,246,0.15);
+  --mono:   'JetBrains Mono', monospace;
+  --display:'Unbounded', sans-serif;
+  --body:   'Onest', sans-serif;
+}
+
 #app {
   font-family: 'JetBrains Mono', 'Space Grotesk', 'Noto Sans SC', monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #000000;
-  background-color: #ffffff;
+  background-color: transparent;
 }
 
 ::-webkit-scrollbar {
