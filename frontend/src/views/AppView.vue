@@ -35,6 +35,7 @@
       <ScenarioForm
         v-else-if="step === 'form' && selectedScenario"
         :scenario="selectedScenario"
+        :is-demo-user="currentUser?.role === 'demo'"
         @back="onBack"
         @submit="onSubmit"
       />

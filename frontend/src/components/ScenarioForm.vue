@@ -16,6 +16,26 @@
     <!-- Body -->
     <div class="form-body">
 
+      <!-- ── Demo banner (demo users only) ─────────────────────────────── -->
+      <div v-if="isDemoUser && scenario.demo" class="demo-banner">
+        <div class="demo-banner-left">
+          <span class="demo-icon">🎭</span>
+          <div>
+            <div class="demo-title">Демо-режим</div>
+            <div class="demo-sub">Загрузить готовые демо-файлы и предзаполненный вопрос</div>
+          </div>
+        </div>
+        <button
+          class="demo-fill-btn"
+          :disabled="demoLoading"
+          @click="loadDemoData"
+        >
+          <span v-if="demoLoading" class="demo-spinner">⟳</span>
+          <span v-else-if="demoLoaded">✓ Загружено</span>
+          <span v-else>Заполнить демо-данными</span>
+        </button>
+      </div>
+
       <!-- ── File slots ─────────────────────────────────────────────────── -->
       <div class="slots-section">
         <h2 class="section-label">Что загрузить</h2>
@@ -76,6 +96,12 @@
                 <div v-for="(f, fi) in slotFiles[idx]" :key="fi" class="file-item">
                   <span class="file-emoji">📄</span>
                   <span class="file-name">{{ f.name }}</span>
+                  <button
+                    v-if="isDemoUser"
+                    class="preview-btn"
+                    title="Просмотр содержимого"
+                    @click.stop="previewFileContent(f)"
+                  >👁</button>
                   <button @click.stop="removeFile(idx, fi)" class="remove-btn">×</button>
                 </div>
               </div>
@@ -131,14 +157,25 @@
       </div>
 
     </div>
+
+    <!-- ── Demo file preview modal ──────────────────────────────────────── -->
+    <DemoModal
+      :show="previewOpen"
+      :filename="previewFile.name"
+      :content="previewFile.content"
+      @close="previewOpen = false"
+    />
+
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
+import DemoModal from './DemoModal.vue'
 
 const props = defineProps({
-  scenario: { type: Object, required: true },
+  scenario:    { type: Object,  required: true },
+  isDemoUser:  { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['back', 'submit'])
@@ -156,12 +193,20 @@ const inputRefs = ref([])
 // Research question (pre-filled from scenario)
 const requirement = ref(props.scenario.defaultPrompt)
 
+// Demo state
+const demoLoaded  = ref(false)
+const demoLoading = ref(false)
+const previewOpen = ref(false)
+const previewFile = ref({ name: '', content: '' })
+
 // Reset state when scenario changes (e.g. user went back and picked another)
 watch(() => props.scenario, (newS) => {
   slotFiles.splice(0, slotFiles.length, ...newS.fileSlots.map(() => []))
   openTips.splice(0, openTips.length, ...newS.fileSlots.map(() => false))
   dragOver.splice(0, dragOver.length, ...newS.fileSlots.map(() => false))
   requirement.value = newS.defaultPrompt
+  demoLoaded.value  = false
+  demoLoading.value = false
 })
 
 // ── Validation ──────────────────────────────────────────────────────────────
@@ -207,6 +252,31 @@ function removeFile(slotIdx, fileIdx) {
 
 function toggleTips(idx) {
   openTips[idx] = !openTips[idx]
+}
+
+// ── Demo ─────────────────────────────────────────────────────────────────────
+
+async function loadDemoData() {
+  if (!props.scenario.demo || demoLoading.value) return
+  demoLoading.value = true
+  try {
+    for (const { path, name, slot } of props.scenario.demo.files) {
+      const res  = await fetch(path)
+      const blob = await res.blob()
+      const file = new File([blob], name, { type: 'text/markdown' })
+      slotFiles[slot] = [file]
+    }
+    requirement.value = props.scenario.demo.prompt
+    demoLoaded.value  = true
+  } finally {
+    demoLoading.value = false
+  }
+}
+
+async function previewFileContent(file) {
+  const text = await file.text()
+  previewFile.value = { name: file.name, content: text }
+  previewOpen.value = true
 }
 
 // ── Submit ───────────────────────────────────────────────────────────────────
@@ -608,6 +678,92 @@ function handleSubmit() {
 .start-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
 .btn-arrow { font-size: 1.2rem; }
 
+/* ── Demo banner ─────────────────────────────────────────────────────────── */
+.demo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(56, 189, 248, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.demo-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.demo-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.demo-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #38BDF8;
+  margin-bottom: 3px;
+}
+
+.demo-sub {
+  font-size: 0.8rem;
+  color: #7FA4C4;
+  line-height: 1.4;
+}
+
+.demo-fill-btn {
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #38BDF8;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 8px;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.demo-fill-btn:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.6);
+}
+
+.demo-fill-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.demo-spinner {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Preview button ──────────────────────────────────────────────────────── */
+.preview-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0 4px;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.preview-btn:hover { opacity: 1; }
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 860px) {
   .outcomes-list { grid-template-columns: 1fr; }
@@ -618,5 +774,7 @@ function handleSubmit() {
   .slot-hint { text-align: left; }
   .section-header-row { flex-direction: column; gap: 4px; }
   .form-title { font-size: 1.2rem; }
+  .demo-banner { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .demo-fill-btn { width: 100%; text-align: center; }
 }
 </style>
