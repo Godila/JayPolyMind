@@ -185,3 +185,29 @@ export const getSimulationHistory = (limit = 20) => {
   return service.get('/api/simulation/history', { params: { limit } })
 }
 
+// ── Custom Agents ────────────────────────────────────────────────────────────
+
+/**
+ * Preview a custom agent profile (LLM generation, no saving)
+ * @param {string} simulationId
+ * @param {Object} data - { name, description, stance?, activity?, interests? }
+ */
+export const previewCustomAgent = (simulationId, data) =>
+  service.post(`/api/simulation/${simulationId}/preview-custom-agent`, data)
+
+/**
+ * Add a custom agent to the simulation (LLM generation + append to files)
+ * @param {string} simulationId
+ * @param {Object} data - { name, description, stance?, activity?, interests? }
+ */
+export const addCustomAgent = (simulationId, data) =>
+  service.post(`/api/simulation/${simulationId}/add-custom-agent`, data)
+
+/**
+ * Delete a custom agent from the simulation
+ * @param {string} simulationId
+ * @param {number} agentId
+ */
+export const deleteCustomAgent = (simulationId, agentId) =>
+  service.delete(`/api/simulation/${simulationId}/custom-agent/${agentId}`)
+

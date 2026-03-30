@@ -2709,3 +2709,324 @@ def close_simulation_env():
             "error": str(e),
             "traceback": traceback.format_exc()
         }), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Custom Agent Endpoints
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _get_simulation_dir(simulation_id: str) -> str:
+    """Return path to simulation data directory."""
+    return os.path.join(Config.OASIS_SIMULATION_DATA_DIR, simulation_id)
+
+
+def _load_reddit_profiles(simulation_dir: str) -> list:
+    import json as _json
+    path = os.path.join(simulation_dir, "reddit_profiles.json")
+    with open(path, "r", encoding="utf-8") as f:
+        return _json.load(f)
+
+
+def _save_reddit_profiles(simulation_dir: str, profiles: list) -> None:
+    import json as _json
+    path = os.path.join(simulation_dir, "reddit_profiles.json")
+    with open(path, "w", encoding="utf-8") as f:
+        _json.dump(profiles, f, ensure_ascii=False, indent=2)
+
+
+def _load_simulation_config(simulation_dir: str) -> dict:
+    import json as _json
+    path = os.path.join(simulation_dir, "simulation_config.json")
+    with open(path, "r", encoding="utf-8") as f:
+        return _json.load(f)
+
+
+def _save_simulation_config(simulation_dir: str, config: dict) -> None:
+    import json as _json
+    path = os.path.join(simulation_dir, "simulation_config.json")
+    with open(path, "w", encoding="utf-8") as f:
+        _json.dump(config, f, ensure_ascii=False, indent=2)
+
+
+def _append_twitter_profile(simulation_dir: str, profile_dict: dict) -> None:
+    """Append one row to twitter_profiles.csv."""
+    import csv
+    path = os.path.join(simulation_dir, "twitter_profiles.csv")
+    file_exists = os.path.exists(path)
+    with open(path, "a", newline="", encoding="utf-8") as f:
+        fieldnames = ["user_id", "name", "username", "user_char", "description"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow({
+            "user_id":    profile_dict.get("user_id", 0),
+            "name":       profile_dict.get("name", ""),
+            "username":   profile_dict.get("username", ""),
+            "user_char":  profile_dict.get("persona", ""),
+            "description": profile_dict.get("bio", ""),
+        })
+
+
+def _remove_twitter_profile(simulation_dir: str, user_id: int) -> None:
+    """Remove a row from twitter_profiles.csv by user_id."""
+    import csv
+    path = os.path.join(simulation_dir, "twitter_profiles.csv")
+    if not os.path.exists(path):
+        return
+    rows = []
+    fieldnames = None
+    with open(path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        fieldnames = reader.fieldnames
+        for row in reader:
+            if str(row.get("user_id", "")) != str(user_id):
+                rows.append(row)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        if fieldnames:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+
+
+def _build_agent_config_entry(user_id: int, name: str, stance: str, activity_level: float) -> dict:
+    """Build a simulation_config agent_configs entry for a custom agent."""
+    stance_bias = {
+        "supportive":  0.5,
+        "opposing":   -0.4,
+        "neutral":     0.0,
+        "observer":   -0.1,
+    }
+    sentiment_bias    = stance_bias.get(stance, 0.0)
+    posts_per_hour    = round(max(0.5, activity_level * 2.0), 1)
+    comments_per_hour = round(max(1.0, activity_level * 4.0), 1)
+
+    if activity_level <= 0.3:
+        active_hours = list(range(10, 18))
+    elif activity_level >= 0.8:
+        active_hours = list(range(8, 24))
+    else:
+        active_hours = list(range(9, 22))
+
+    return {
+        "agent_id":           user_id,
+        "entity_uuid":        f"custom_{user_id}",
+        "entity_name":        name,
+        "entity_type":        "custom",
+        "activity_level":     activity_level,
+        "posts_per_hour":     posts_per_hour,
+        "comments_per_hour":  comments_per_hour,
+        "active_hours":       active_hours,
+        "response_delay_min": 5,
+        "response_delay_max": 60,
+        "sentiment_bias":     sentiment_bias,
+        "stance":             stance,
+        "influence_weight":   1.0,
+    }
+
+
+@simulation_bp.route('/<simulation_id>/preview-custom-agent', methods=['POST'])
+def preview_custom_agent(simulation_id: str):
+    """
+    Generate a preview of a custom agent profile via LLM (without saving).
+
+    Request JSON: { name, description, stance?, activity?, interests? }
+    """
+    try:
+        data = request.get_json() or {}
+        name = data.get("name", "").strip()
+        description = data.get("description", "").strip()
+        if not name or not description:
+            return jsonify({"success": False, "error": "name and description are required"}), 400
+
+        stance         = data.get("stance", "neutral")
+        activity_level = float(data.get("activity", 0.5))
+        interests      = data.get("interests", [])
+
+        manager = SimulationManager()
+        state   = manager.get_simulation(simulation_id)
+        if not state:
+            return jsonify({"success": False, "error": f"Simulation not found: {simulation_id}"}), 404
+
+        project_manager = ProjectManager()
+        project = project_manager.get_project(state.project_id)
+        sim_requirement = (getattr(project, "simulation_requirement", "") or "") if project else ""
+
+        generator = OasisProfileGenerator()
+        profile   = generator.generate_custom_profile(
+            user_id=0,
+            name=name,
+            description=description,
+            stance=stance,
+            activity_level=activity_level,
+            interests=interests,
+            simulation_requirement=sim_requirement,
+        )
+
+        return jsonify({
+            "success": True,
+            "data": {
+                **profile.to_reddit_format(),
+                "persona":            profile.persona,
+                "mbti":               profile.mbti,
+                "age":                profile.age,
+                "country":            profile.country,
+                "profession":         profile.profession,
+                "source_entity_type": "custom",
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"preview_custom_agent error: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
+
+@simulation_bp.route('/<simulation_id>/add-custom-agent', methods=['POST'])
+def add_custom_agent(simulation_id: str):
+    """
+    Generate a custom agent and append it to the simulation profile files and config.
+    The simulation must be in 'ready' (prepare completed, not yet started).
+
+    Request JSON: { name, description, stance?, activity?, interests? }
+    """
+    try:
+        data = request.get_json() or {}
+        name = data.get("name", "").strip()
+        description = data.get("description", "").strip()
+        if not name or not description:
+            return jsonify({"success": False, "error": "name and description are required"}), 400
+
+        stance         = data.get("stance", "neutral")
+        activity_level = float(data.get("activity", 0.5))
+        interests      = data.get("interests", [])
+
+        manager = SimulationManager()
+        state   = manager.get_simulation(simulation_id)
+        if not state:
+            return jsonify({"success": False, "error": f"Simulation not found: {simulation_id}"}), 404
+
+        from ..services.simulation_manager import SimulationStatus
+        forbidden = {SimulationStatus.RUNNING, SimulationStatus.COMPLETED, SimulationStatus.STOPPED}
+        if state.status in forbidden:
+            return jsonify({
+                "success": False,
+                "error": f"Cannot add agents when simulation status is '{state.status.value}'."
+            }), 400
+
+        simulation_dir = _get_simulation_dir(simulation_id)
+        profiles       = _load_reddit_profiles(simulation_dir)
+        existing_ids   = [p.get("user_id", 0) for p in profiles]
+        next_id        = (max(existing_ids) + 1) if existing_ids else 0
+
+        project_manager = ProjectManager()
+        project = project_manager.get_project(state.project_id)
+        sim_requirement = (getattr(project, "simulation_requirement", "") or "") if project else ""
+
+        generator = OasisProfileGenerator()
+        profile   = generator.generate_custom_profile(
+            user_id=next_id,
+            name=name,
+            description=description,
+            stance=stance,
+            activity_level=activity_level,
+            interests=interests,
+            simulation_requirement=sim_requirement,
+        )
+
+        reddit_entry = profile.to_reddit_format()
+        # Ensure OASIS-required fields have defaults
+        reddit_entry.setdefault("age",     30)
+        reddit_entry.setdefault("gender",  "other")
+        reddit_entry.setdefault("mbti",    "ISTJ")
+        reddit_entry.setdefault("country", "US")
+        # Store custom marker so frontend can identify these agents
+        reddit_entry["source_entity_uuid"] = profile.source_entity_uuid
+        reddit_entry["source_entity_type"] = "custom"
+
+        profiles.append(reddit_entry)
+        _save_reddit_profiles(simulation_dir, profiles)
+        _append_twitter_profile(simulation_dir, reddit_entry)
+
+        config = _load_simulation_config(simulation_dir)
+        config.setdefault("agent_configs", [])
+        config["agent_configs"].append(
+            _build_agent_config_entry(next_id, name, stance, activity_level)
+        )
+        _save_simulation_config(simulation_dir, config)
+
+        logger.info(f"Added custom agent '{name}' (id={next_id}) to simulation {simulation_id}")
+
+        return jsonify({
+            "success": True,
+            "data": {
+                **reddit_entry,
+                "persona":        profile.persona,
+                "profession":     profile.profession,
+                "stance":         stance,
+                "activity_level": activity_level,
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"add_custom_agent error: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
+
+@simulation_bp.route('/<simulation_id>/custom-agent/<int:agent_id>', methods=['DELETE'])
+def delete_custom_agent(simulation_id: str, agent_id: int):
+    """
+    Delete a custom agent from the simulation profile files and config.
+    Only agents with source_entity_uuid starting with 'custom_' can be deleted.
+    """
+    try:
+        manager = SimulationManager()
+        state   = manager.get_simulation(simulation_id)
+        if not state:
+            return jsonify({"success": False, "error": f"Simulation not found: {simulation_id}"}), 404
+
+        from ..services.simulation_manager import SimulationStatus
+        if state.status == SimulationStatus.RUNNING:
+            return jsonify({"success": False, "error": "Cannot delete agents while simulation is running."}), 400
+
+        simulation_dir = _get_simulation_dir(simulation_id)
+        profiles       = _load_reddit_profiles(simulation_dir)
+
+        target = next((p for p in profiles if p.get("user_id") == agent_id), None)
+        if not target:
+            return jsonify({"success": False, "error": f"Agent {agent_id} not found"}), 404
+
+        source_uuid = target.get("source_entity_uuid", "") or ""
+        if not str(source_uuid).startswith("custom_"):
+            return jsonify({
+                "success": False,
+                "error": "Only custom agents can be deleted via this endpoint."
+            }), 403
+
+        profiles = [p for p in profiles if p.get("user_id") != agent_id]
+        _save_reddit_profiles(simulation_dir, profiles)
+        _remove_twitter_profile(simulation_dir, agent_id)
+
+        config = _load_simulation_config(simulation_dir)
+        config["agent_configs"] = [
+            a for a in config.get("agent_configs", [])
+            if a.get("agent_id") != agent_id
+        ]
+        _save_simulation_config(simulation_dir, config)
+
+        logger.info(f"Deleted custom agent id={agent_id} from simulation {simulation_id}")
+        return jsonify({"success": True, "data": {"deleted_agent_id": agent_id}})
+
+    except Exception as e:
+        logger.error(f"delete_custom_agent error: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500

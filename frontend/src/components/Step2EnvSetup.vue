@@ -83,9 +83,9 @@
               <span class="preview-title">Сгенерированные персоны агентов</span>
             </div>
             <div class="profiles-list">
-              <div 
-                v-for="(profile, idx) in profiles" 
-                :key="idx" 
+              <div
+                v-for="(profile, idx) in profiles"
+                :key="idx"
                 class="profile-card"
                 @click="selectProfile(profile)"
               >
@@ -98,9 +98,9 @@
                 </div>
                 <p class="profile-bio">{{ profile.bio || 'Описание отсутствует' }}</p>
                 <div v-if="profile.interested_topics?.length" class="profile-topics">
-                  <span 
-                    v-for="topic in profile.interested_topics.slice(0, 3)" 
-                    :key="topic" 
+                  <span
+                    v-for="topic in profile.interested_topics.slice(0, 3)"
+                    :key="topic"
                     class="topic-tag"
                   >{{ topic }}</span>
                   <span v-if="profile.interested_topics.length > 3" class="topic-more">
@@ -110,6 +110,50 @@
               </div>
             </div>
           </div>
+
+          <!-- ── Custom agents section (shown once profiles are generated) ── -->
+          <div v-if="phase > 1" class="custom-agents-section">
+            <div class="custom-section-header">
+              <div class="custom-section-title">
+                <span class="custom-section-icon">⚡</span>
+                <span>Кастомные агенты</span>
+                <span v-if="customProfiles.length" class="custom-count">{{ customProfiles.length }}</span>
+              </div>
+              <button class="add-agent-btn" @click="showAddAgentModal = true">
+                + Добавить агента
+              </button>
+            </div>
+
+            <!-- Custom profiles list -->
+            <div v-if="customProfiles.length" class="custom-profiles-list">
+              <div
+                v-for="p in customProfiles"
+                :key="p.user_id"
+                class="custom-profile-card"
+              >
+                <div class="custom-card-left">
+                  <span class="custom-badge">⚡ custom</span>
+                  <span class="custom-name">{{ p.name || p.username }}</span>
+                  <span
+                    class="custom-stance"
+                    :class="'stance-' + (p.stance || 'neutral')"
+                  >{{ p.stance || 'neutral' }}</span>
+                </div>
+                <div class="custom-card-right">
+                  <span class="custom-profession">{{ p.profession || '' }}</span>
+                  <button
+                    class="custom-delete-btn"
+                    title="Удалить агента"
+                    @click="removeCustomAgent(p.user_id)"
+                  >×</button>
+                </div>
+              </div>
+            </div>
+            <p v-else class="custom-empty-hint">
+              Агенты, добавленные здесь, будут участвовать в симуляции наравне с автоматически сгенерированными.
+            </p>
+          </div>
+
         </div>
       </div>
 
@@ -528,6 +572,15 @@
       </div>
     </div>
 
+    <!-- Add Custom Agent Modal -->
+    <AddAgentModal
+      :show="showAddAgentModal"
+      :simulation-id="simulationId || ''"
+      :simulation-requirement="projectData?.simulation_requirement || ''"
+      @close="showAddAgentModal = false"
+      @added="onCustomAgentAdded"
+    />
+
     <!-- Profile Detail Modal -->
     <Transition name="modal">
       <div v-if="selectedProfile" class="profile-modal-overlay" @click.self="selectedProfile = null">
@@ -633,13 +686,15 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { 
-  prepareSimulation, 
-  getPrepareStatus, 
+import {
+  prepareSimulation,
+  getPrepareStatus,
   getSimulationProfilesRealtime,
   getSimulationConfig,
-  getSimulationConfigRealtime 
+  getSimulationConfigRealtime,
+  deleteCustomAgent,
 } from '../api/simulation'
+import AddAgentModal from './AddAgentModal.vue'
 
 const props = defineProps({
   simulationId: String,  // Passed from parent component
@@ -662,6 +717,10 @@ const expectedTotal = ref(null)
 const simulationConfig = ref(null)
 const selectedProfile = ref(null)
 const showProfilesDetail = ref(true)
+
+// Custom agents
+const showAddAgentModal = ref(false)
+const customProfiles = ref([])   // agents with source_entity_type === 'custom'
 
 // Log deduplication：Record key information from last output
 let lastLoggedMessage = ''
@@ -735,6 +794,28 @@ const totalTopicsCount = computed(() => {
 // Methods
 const addLog = (msg) => {
   emit('add-log', msg)
+}
+
+// ── Custom agent handlers ────────────────────────────────────────────────────
+
+const onCustomAgentAdded = (profile) => {
+  customProfiles.value.push(profile)
+  addLog(`Кастомный агент добавлен: ${profile.name} (id=${profile.user_id})`)
+}
+
+const removeCustomAgent = async (agentId) => {
+  if (!props.simulationId) return
+  try {
+    const res = await deleteCustomAgent(props.simulationId, agentId)
+    if (res.data?.success) {
+      customProfiles.value = customProfiles.value.filter(p => p.user_id !== agentId)
+      addLog(`Кастомный агент удалён: id=${agentId}`)
+    } else {
+      addLog(`Ошибка удаления агента: ${res.data?.error || 'unknown'}`)
+    }
+  } catch (e) {
+    addLog(`Ошибка удаления агента: ${e.message}`)
+  }
 }
 
 // ProcessStart simulationButton click
@@ -2598,5 +2679,153 @@ onUnmounted(() => {
 .modal-leave-to .profile-modal {
   transform: scale(0.95) translateY(10px);
   opacity: 0;
+}
+
+/* ── Custom agents section ─────────────────────────────────────────────── */
+.custom-agents-section {
+  margin-top: 20px;
+  padding: 16px 18px;
+  background: rgba(56, 189, 248, 0.04);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 10px;
+}
+
+.custom-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.custom-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #38BDF8;
+}
+
+.custom-section-icon { font-size: 0.9rem; }
+
+.custom-count {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 0.7rem;
+  color: #38BDF8;
+}
+
+.add-agent-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 7px;
+  padding: 6px 14px;
+  color: #38BDF8;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.add-agent-btn:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.6);
+}
+
+.custom-profiles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.custom-profile-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(56, 189, 248, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.custom-card-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.custom-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: #38BDF8;
+  flex-shrink: 0;
+}
+
+.custom-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #EFF6FF;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-stance {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  border-radius: 4px;
+  padding: 1px 7px;
+  flex-shrink: 0;
+}
+.custom-stance.stance-supportive { background: rgba(34,197,94,.12); color: #86EFAC; }
+.custom-stance.stance-opposing   { background: rgba(239,68,68,.12);  color: #FCA5A5; }
+.custom-stance.stance-neutral    { background: rgba(148,163,184,.1); color: #CBD5E1; }
+.custom-stance.stance-observer   { background: rgba(148,163,184,.08);color: #94A3B8; }
+
+.custom-card-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.custom-profession {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: #7FA4C4;
+}
+
+.custom-delete-btn {
+  background: none;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 5px;
+  color: #3A5570;
+  width: 22px; height: 22px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  transition: all 0.15s;
+}
+.custom-delete-btn:hover { border-color: #EF4444; color: #F87171; }
+
+.custom-empty-hint {
+  font-size: 0.8rem;
+  color: #3A5570;
+  line-height: 1.5;
+  font-style: italic;
 }
 </style>

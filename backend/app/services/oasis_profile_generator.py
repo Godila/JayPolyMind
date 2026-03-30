@@ -1138,3 +1138,102 @@ Important:
         logger.warning("save_profiles_to_json is deprecated, please use save_profiles method")
         self.save_profiles(profiles, file_path, platform)
 
+    # ── Custom agent generation ────────────────────────────────────────────────
+
+    def generate_custom_profile(
+        self,
+        user_id: int,
+        name: str,
+        description: str,
+        stance: str = "neutral",
+        activity_level: float = 0.5,
+        interests: Optional[List[str]] = None,
+        simulation_requirement: str = ""
+    ) -> OasisAgentProfile:
+        """
+        Generate a full OASIS agent profile for a user-defined custom agent via LLM.
+
+        Args:
+            user_id: Sequential user ID (should be max existing ID + 1)
+            name: Agent display name
+            description: Brief character/role description provided by user
+            stance: supportive | neutral | opposing | observer
+            activity_level: 0.0–1.0 activity multiplier
+            interests: List of topic tags
+            simulation_requirement: Original simulation research question (for context)
+
+        Returns:
+            OasisAgentProfile with LLM-expanded bio, persona, MBTI, age, country, profession
+        """
+        interests = interests or []
+        interests_str = ", ".join(interests) if interests else "general topics"
+
+        prompt = (
+            "You are creating a realistic social media user profile for an AI simulation agent.\n\n"
+            f"Agent name: {name}\n"
+            f"Character description: {description}\n"
+            f"Behavioral stance in simulation: {stance}\n"
+            f"Interests: {interests_str}\n"
+            f"Simulation context: {simulation_requirement}\n\n"
+            "Generate a realistic, detailed profile. Return ONLY valid JSON with these exact keys:\n"
+            "{\n"
+            '  "bio": "1-2 sentence public biography visible on their profile",\n'
+            '  "persona": "3-5 sentence detailed personality description used as the agent LLM system prompt. Include background, values, communication style and typical behaviors.",\n'
+            '  "mbti": "one of the 16 MBTI types that fits this character",\n'
+            '  "age": <integer between 18 and 65>,\n'
+            '  "country": "country name in English",\n'
+            '  "profession": "job title or role",\n'
+            '  "gender": "male or female or other"\n'
+            "}"
+        )
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.8
+            )
+            raw = response.choices[0].message.content.strip()
+
+            # Strip markdown code fences if present
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+            raw = raw.strip()
+
+            profile_data = json.loads(raw)
+        except Exception as e:
+            logger.warning(f"LLM profile generation failed, using fallback: {e}")
+            profile_data = {
+                "bio": description[:150],
+                "persona": f"{name} is a {stance} participant with the following background: {description}",
+                "mbti": random.choice(self.MBTI_TYPES),
+                "age": random.randint(25, 50),
+                "country": "US",
+                "profession": "Participant",
+                "gender": "other",
+            }
+
+        username = self._generate_username(name)
+
+        return OasisAgentProfile(
+            user_id=user_id,
+            user_name=username,
+            name=name,
+            bio=profile_data.get("bio", description[:150]),
+            persona=profile_data.get("persona", description),
+            karma=random.randint(500, 3000),
+            friend_count=random.randint(50, 300),
+            follower_count=random.randint(100, 500),
+            statuses_count=random.randint(100, 1000),
+            age=profile_data.get("age") or random.randint(25, 50),
+            gender=self._normalize_gender(profile_data.get("gender")),
+            mbti=profile_data.get("mbti") or random.choice(self.MBTI_TYPES),
+            country=profile_data.get("country") or "US",
+            profession=profile_data.get("profession") or "Participant",
+            interested_topics=interests,
+            source_entity_uuid=f"custom_{user_id}",
+            source_entity_type="custom",
+        )
+
