@@ -1,205 +1,130 @@
 <div align="center">
 
-<img src="./static/image/mirofish-offline-banner.png" alt="JayPolyMind" width="100%"/>
-
 # JayPolyMind
 
-**Fully local fork of [MiroFish](https://github.com/666ghj/MiroFish) — no cloud APIs required. English UI.**
+**Simulate public opinion before you publish.**
 
-*A multi-agent swarm intelligence engine that simulates public opinion, market sentiment, and social dynamics. Entirely on your hardware.*
+*Upload any document — press release, policy draft, product pitch — and get hundreds of AI agents with unique personalities reacting to it in real time.*
 
-[![GitHub Stars](https://img.shields.io/github/stars/nikmcfly/JayPolyMind?style=flat-square&color=DAA520)](https://github.com/nikmcfly/JayPolyMind/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/nikmcfly/JayPolyMind?style=flat-square)](https://github.com/nikmcfly/JayPolyMind/network)
-[![Docker](https://img.shields.io/badge/Docker-Build-2496ED?style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/)
+[![GitHub Stars](https://img.shields.io/github/stars/Godila/JayPolyMind?style=flat-square&color=DAA520)](https://github.com/Godila/JayPolyMind/stargazers)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue?style=flat-square)](./LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-jpm.haragy.top-38BDF8?style=flat-square)](https://jpm.haragy.top/)
 
 </div>
 
-## What is this?
+## What is JayPolyMind?
 
-MiroFish is a multi-agent simulation engine: upload any document (press release, policy draft, financial report), and it generates hundreds of AI agents with unique personalities that simulate the public reaction on social media. Posts, arguments, opinion shifts — hour by hour.
+JayPolyMind is a multi-agent swarm intelligence engine that turns any document into a living simulation of public reaction. Before you launch — see how different audience segments will respond, what objections they'll raise, and how sentiment evolves over time.
 
-The [original MiroFish](https://github.com/666ghj/MiroFish) was built for the Chinese market (Chinese UI, Zep Cloud for knowledge graphs, DashScope API). This fork makes it **fully local and fully English**:
+**Live demo:** [jpm.haragy.top](https://jpm.haragy.top/) — demo mode available without registration.
 
-| Original MiroFish | JayPolyMind |
-|---|---|
-| Chinese UI | **English UI** (1,000+ strings translated) |
-| Zep Cloud (graph memory) | **Neo4j Community Edition 5.15** |
-| DashScope / OpenAI API (LLM) | **Ollama** (qwen2.5, llama3, etc.) |
-| Zep Cloud embeddings | **nomic-embed-text** via Ollama |
-| Cloud API keys required | **Zero cloud dependencies** |
+## How it works
 
-## Workflow
+### 5-step pipeline
 
-1. **Graph Build** — Extracts entities (people, companies, events) and relationships from your document. Builds a knowledge graph with individual and group memory via Neo4j.
-2. **Env Setup** — Generates hundreds of agent personas, each with unique personality, opinion bias, reaction speed, influence level, and memory of past events.
-3. **Simulation** — Agents interact on simulated social platforms: posting, replying, arguing, shifting opinions. The system tracks sentiment evolution, topic propagation, and influence dynamics in real time.
-4. **Report** — A ReportAgent analyzes the post-simulation environment, interviews a focus group of agents, searches the knowledge graph for evidence, and generates a structured analysis.
-5. **Interaction** — Chat with any agent from the simulated world. Ask them why they posted what they posted. Full memory and personality persists.
+**Step 1 — Graph Build**
+Upload a document (PDF, MD, TXT). JayPolyMind extracts entities, facts, and relationships and builds a knowledge graph in Neo4j. This becomes the shared memory for all agents.
 
-## Screenshot
+**Step 2 — Env Setup**
+The system generates agent personas — each with a unique psychological profile, opinion bias, profession, age, MBTI, and reaction pattern. You can also add custom agents manually with preset personality archetypes (Skeptic, Enthusiast, Expert, Influencer, Observer) and behavioral toggles.
 
-<div align="center">
-<img src="./static/image/mirofish-offline-screenshot.jpg" alt="JayPolyMind — English UI" width="100%"/>
-</div>
+**Step 3 — Simulation**
+Agents interact across two parallel social platforms (Twitter-style feed + Reddit-style community). They post, reply, argue, follow each other, and shift opinions round by round. Sentiment evolution is tracked in real time.
+
+**Step 4 — Report**
+A ReportAgent analyzes the simulation, interviews a focus group of agents, searches the knowledge graph, and generates a structured analytical report with section-by-section breakdown and key insights.
+
+**Step 5 — Interaction**
+Chat with any agent from the simulation. Ask why they reacted the way they did. Run batch surveys across the agent population. The ReportAgent answers follow-up questions with full access to the graph and simulation data.
+
+## Key features
+
+- **Custom agents** — add your own personas before simulation with personality presets and stance/activity toggles
+- **Demo mode** — one-click auto-fill with curated scenarios (product launch, regulatory analysis, corporate transformation, communications campaign)
+- **ReportAgent chat** — conversational interface with 4 tools: InsightForge, PanoramaSearch, QuickSearch, AgentInterview
+- **Real-time timeline** — dual-platform action feed with round-by-round simulation progress
+- **Any LLM** — works with Ollama (local), Claude, GPT-4, or any OpenAI-compatible API
 
 ## Quick Start
 
-### Prerequisites
-
-- Docker & Docker Compose (recommended), **or**
-- Python 3.11+, Node.js 18+, Neo4j 5.15+, Ollama
-
-### Option A: Docker (easiest)
+### Docker (recommended)
 
 ```bash
-git clone https://github.com/nikmcfly/JayPolyMind.git
+git clone https://github.com/Godila/JayPolyMind.git
 cd JayPolyMind
 cp .env.example .env
-
-# Start all services (Neo4j, Ollama, JayPolyMind)
+# Edit .env with your LLM API key and model settings
 docker compose up -d
-
-# Pull the required models into Ollama
-docker exec jaypolymind-ollama ollama pull qwen2.5:32b
-docker exec jaypolymind-ollama ollama pull nomic-embed-text
-```
-
-Open `http://localhost:3000` — that's it.
-
-### Option B: Manual
-
-**1. Start Neo4j**
-
-```bash
-docker run -d --name neo4j \
-  -p 7474:7474 -p 7687:7687 \
-  -e NEO4J_AUTH=neo4j/jaypolymind \
-  neo4j:5.15-community
-```
-
-**2. Start Ollama & pull models**
-
-```bash
-ollama serve &
-ollama pull qwen2.5:32b      # LLM (or qwen2.5:14b for less VRAM)
-ollama pull nomic-embed-text  # Embeddings (768d)
-```
-
-**3. Configure & run backend**
-
-```bash
-cp .env.example .env
-# Edit .env if your Neo4j/Ollama are on non-default ports
-
-cd backend
-pip install -r requirements.txt
-python run.py
-```
-
-**4. Run frontend**
-
-```bash
-cd frontend
-npm install
-npm run dev
 ```
 
 Open `http://localhost:3000`.
 
-## Configuration
-
-All settings are in `.env` (copy from `.env.example`):
+### Manual
 
 ```bash
-# LLM — points to local Ollama (OpenAI-compatible API)
-LLM_API_KEY=ollama
+# 1. Start Neo4j
+docker run -d --name neo4j -p 7474:7474 -p 7687:7687 \
+  -e NEO4J_AUTH=neo4j/jaypolymind neo4j:5.18-community
+
+# 2. Backend
+cd backend && pip install -r requirements.txt && python run.py
+
+# 3. Frontend
+cd frontend && npm install && npm run dev
+```
+
+## Configuration
+
+```bash
+# .env — copy from .env.example
+
+LLM_API_KEY=your-api-key          # or "ollama" for local
 LLM_BASE_URL=http://localhost:11434/v1
 LLM_MODEL_NAME=qwen2.5:32b
 
-# Neo4j
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=jaypolymind
 
-# Embeddings
 EMBEDDING_MODEL=nomic-embed-text
 EMBEDDING_BASE_URL=http://localhost:11434
+
+ADMIN_LOGIN=admin
+ADMIN_PASSWORD=changeme
 ```
 
-Works with any OpenAI-compatible API — swap Ollama for Claude, GPT, or any other provider by changing `LLM_BASE_URL` and `LLM_API_KEY`.
+Compatible with any OpenAI-format API — swap `LLM_BASE_URL` and `LLM_API_KEY` for Claude, GPT, DeepSeek, or any hosted provider.
 
 ## Architecture
 
-This fork introduces a clean abstraction layer between the application and the graph database:
-
 ```
-┌─────────────────────────────────────────┐
-│              Flask API                   │
-│  graph.py  simulation.py  report.py     │
-└──────────────┬──────────────────────────┘
-               │ app.extensions['neo4j_storage']
-┌──────────────▼──────────────────────────┐
-│           Service Layer                  │
-│  EntityReader  GraphToolsService         │
-│  GraphMemoryUpdater  ReportAgent         │
-└──────────────┬──────────────────────────┘
-               │ storage: GraphStorage
-┌──────────────▼──────────────────────────┐
-│         GraphStorage (abstract)          │
-│              │                            │
-│    ┌─────────▼─────────┐                │
-│    │   Neo4jStorage     │                │
-│    │  ┌───────────────┐ │                │
-│    │  │ EmbeddingService│ ← Ollama       │
-│    │  │ NERExtractor   │ ← Ollama LLM   │
-│    │  │ SearchService  │ ← Hybrid search │
-│    │  └───────────────┘ │                │
-│    └───────────────────┘                │
-└─────────────────────────────────────────┘
-               │
-        ┌──────▼──────┐
-        │  Neo4j CE   │
-        │  5.15       │
-        └─────────────┘
+Document → Knowledge Graph (Neo4j) → Agent Profiles → OASIS Simulation → ReportAgent → Interactive Chat
 ```
 
-**Key design decisions:**
+- **Storage layer**: Neo4j CE 5.18 with hybrid search (0.7 × vector + 0.3 × BM25)
+- **Simulation engine**: [OASIS by CAMEL-AI](https://github.com/camel-ai/oasis) — dual-platform multi-agent simulation
+- **LLM interface**: unified OpenAI-compatible client, pluggable provider
+- **Frontend**: Vue 3 + Vite, real-time updates via polling
+- **Backend**: Flask + blueprint architecture, dependency injection via `app.extensions`
 
-- `GraphStorage` is an abstract interface — swap Neo4j for any other graph DB by implementing one class
-- Dependency injection via Flask `app.extensions` — no global singletons
-- Hybrid search: 0.7 × vector similarity + 0.3 × BM25 keyword search
-- Synchronous NER/RE extraction via local LLM (replaces Zep's async episodes)
-- All original dataclasses and LLM tools (InsightForge, Panorama, Agent Interviews) preserved
+## Hardware
 
-## Hardware Requirements
-
-| Component | Minimum | Recommended |
+| | Minimum | Recommended |
 |---|---|---|
 | RAM | 16 GB | 32 GB |
-| VRAM (GPU) | 10 GB (14b model) | 24 GB (32b model) |
+| VRAM | 10 GB (14b model) | 24 GB (32b model) |
 | Disk | 20 GB | 50 GB |
-| CPU | 4 cores | 8+ cores |
 
-CPU-only mode works but is significantly slower for LLM inference. For lighter setups, use `qwen2.5:14b` or `qwen2.5:7b`.
+CPU-only works but is slower. Use `qwen2.5:14b` or `qwen2.5:7b` for lighter setups.
 
-## Use Cases
+## Use cases
 
-- **PR crisis testing** — simulate the public reaction to a press release before publishing
-- **Trading signal generation** — feed financial news and observe simulated market sentiment
-- **Policy impact analysis** — test draft regulations against simulated public response
-- **Creative experiments** — someone fed it a classical Chinese novel with a lost ending; the agents wrote a narratively consistent conclusion
+- **PR & communications** — test how a press release lands with different audience segments before publishing
+- **Product launches** — simulate market reaction to pricing, positioning, or feature sets
+- **Policy analysis** — model stakeholder responses to draft regulations or corporate policy changes
+- **Corporate comms** — forecast employee reaction to organizational changes before rollout
+- **Research** — explore opinion dynamics, echo chambers, and sentiment propagation in controlled environments
 
 ## License
 
-AGPL-3.0 — same as the original MiroFish project. See [LICENSE](./LICENSE).
-
-## Credits & Attribution
-
-This is a modified fork of [MiroFish](https://github.com/666ghj/MiroFish) by [666ghj](https://github.com/666ghj), originally supported by [Shanda Group](https://www.shanda.com/). The simulation engine is powered by [OASIS](https://github.com/camel-ai/oasis) from the CAMEL-AI team.
-
-**Modifications in this fork:**
-- Backend migrated from Zep Cloud to local Neo4j CE 5.15 + Ollama
-- Entire frontend translated from Chinese to English (20 files, 1,000+ strings)
-- All Zep references replaced with Neo4j across the UI
-- Rebranded to JayPolyMind
+AGPL-3.0. Simulation engine powered by [OASIS](https://github.com/camel-ai/oasis) from the CAMEL-AI team.
