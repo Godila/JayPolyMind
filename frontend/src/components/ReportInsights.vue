@@ -243,14 +243,22 @@ const buildActivityChart = (agentData) => {
   chartInstances.push(c4)
 }
 
+const fetchMetricsWithRetry = async (retries = 4, delayMs = 2000) => {
+  for (let i = 0; i < retries; i++) {
+    const [res] = await Promise.allSettled([getReportMetrics(props.reportId)])
+    if (res.status === 'fulfilled' && res.value?.success) return res.value.data
+    if (i < retries - 1) await new Promise(r => setTimeout(r, delayMs))
+  }
+  return null
+}
+
 const loadData = async () => {
-  const [metricsRes, analyticsRes] = await Promise.allSettled([
-    getReportMetrics(props.reportId),
+  const [metricsResult, analyticsRes] = await Promise.allSettled([
+    fetchMetricsWithRetry(),
     getSimulationAnalytics(props.simulationId)
   ])
 
-  const metrics = metricsRes.status === 'fulfilled' && metricsRes.value?.success
-    ? metricsRes.value.data : null
+  const metrics = metricsResult.status === 'fulfilled' ? metricsResult.value : null
   const agentActions = analyticsRes.status === 'fulfilled' && analyticsRes.value?.success
     ? analyticsRes.value.data?.agent_actions : null
 
