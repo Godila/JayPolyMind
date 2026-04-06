@@ -250,6 +250,11 @@ onMounted(async () => {
       getSimulationAnalytics(props.simulationId)
     ])
 
+    // Debug: log raw results to console
+    console.log('[ReportInsights] reportId:', props.reportId)
+    console.log('[ReportInsights] metricsRes:', metricsRes.status, metricsRes.status === 'rejected' ? metricsRes.reason?.message : metricsRes.value)
+    console.log('[ReportInsights] analyticsRes:', analyticsRes.status)
+
     const metrics = metricsRes.status === 'fulfilled' && metricsRes.value?.success
       ? metricsRes.value.data : null
     const agentActions = analyticsRes.status === 'fulfilled' && analyticsRes.value?.success
@@ -269,7 +274,8 @@ onMounted(async () => {
       error.value = true
       loading.value = false
     }
-  } catch {
+  } catch (e) {
+    console.error('[ReportInsights] catch:', e)
     error.value = true
     loading.value = false
   }
