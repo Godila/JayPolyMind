@@ -16,6 +16,26 @@
     <!-- Body -->
     <div class="form-body">
 
+      <!-- ── Dry Test banner (always visible) ────────────────────────────── -->
+      <div class="dry-test-banner">
+        <div class="dry-test-left">
+          <span class="dry-test-icon">⚡</span>
+          <div>
+            <div class="dry-test-title">Dry Test</div>
+            <div class="dry-test-sub">3 персоны · 1 документ · ~30 сек до результата</div>
+          </div>
+        </div>
+        <button
+          class="dry-test-fill-btn"
+          :disabled="dryTestLoading"
+          @click="loadDryTest"
+        >
+          <span v-if="dryTestLoading" class="demo-spinner">⟳</span>
+          <span v-else-if="dryTestLoaded">✓ Загружено</span>
+          <span v-else>Загрузить Dry Test</span>
+        </button>
+      </div>
+
       <!-- ── Demo banner (demo users only) ─────────────────────────────── -->
       <div v-if="isDemoUser && scenario.demo" class="demo-banner">
         <div class="demo-banner-left">
@@ -199,6 +219,22 @@ const demoLoading = ref(false)
 const previewOpen = ref(false)
 const previewFile = ref({ name: '', content: '' })
 
+// Dry Test state
+const dryTestLoaded  = ref(false)
+const dryTestLoading = ref(false)
+
+const DRY_TEST_TEXT = `# Инициатива по переходу на 4-дневную рабочую неделю
+
+Министр труда Алексей Петров объявил о пилотной программе перехода на 4-дневную рабочую неделю для сотрудников государственного сектора начиная с января 2025 года. Программа охватит около 50 000 государственных служащих в 12 регионах страны. Инициатива предполагает сохранение полной заработной платы при сокращении рабочих часов до 32 в неделю.
+
+Директор Института экономики труда Марина Соколова поддержала инициативу, сославшись на исследования в Скандинавии: при аналогичном эксперименте производительность труда выросла на 20-40%. По её словам, ключевым условием успеха является перестройка рабочих процессов и внедрение цифровых инструментов управления.
+
+Владелец сети малых предприятий Игорь Захаров выразил серьёзную обеспокоенность. По его мнению, частный сектор не готов к таким изменениям без соответствующих налоговых льгот и переходного периода. Он предупредил о возможном росте цен на товары и услуги как следствии снижения производительности.
+
+Правительство планирует оценить результаты пилота через 6 месяцев и на основе данных принять решение о распространении программы на частный сектор.`
+
+const DRY_TEST_PROMPT = `Как различные социальные и профессиональные группы населения отреагируют на государственную инициативу по переходу на 4-дневную рабочую неделю с сохранением зарплаты?`
+
 // Reset state when scenario changes (e.g. user went back and picked another)
 watch(() => props.scenario, (newS) => {
   slotFiles.splice(0, slotFiles.length, ...newS.fileSlots.map(() => []))
@@ -207,6 +243,8 @@ watch(() => props.scenario, (newS) => {
   requirement.value = newS.defaultPrompt
   demoLoaded.value  = false
   demoLoading.value = false
+  dryTestLoaded.value  = false
+  dryTestLoading.value = false
 })
 
 // ── Validation ──────────────────────────────────────────────────────────────
@@ -252,6 +290,22 @@ function removeFile(slotIdx, fileIdx) {
 
 function toggleTips(idx) {
   openTips[idx] = !openTips[idx]
+}
+
+// ── Dry Test ─────────────────────────────────────────────────────────────────
+
+function loadDryTest() {
+  if (dryTestLoading.value) return
+  dryTestLoading.value = true
+  try {
+    const blob = new Blob([DRY_TEST_TEXT], { type: 'text/markdown' })
+    const file = new File([blob], 'dry-test.md', { type: 'text/markdown' })
+    slotFiles[0] = [file]
+    requirement.value = DRY_TEST_PROMPT
+    dryTestLoaded.value = true
+  } finally {
+    dryTestLoading.value = false
+  }
 }
 
 // ── Demo ─────────────────────────────────────────────────────────────────────
@@ -678,6 +732,68 @@ function handleSubmit() {
 .start-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
 .btn-arrow { font-size: 1.2rem; }
 
+/* ── Dry Test banner ─────────────────────────────────────────────────────── */
+.dry-test-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.dry-test-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.dry-test-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.dry-test-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #10B981;
+  margin-bottom: 3px;
+}
+
+.dry-test-sub {
+  font-size: 0.8rem;
+  color: #7FA4C4;
+  line-height: 1.4;
+}
+
+.dry-test-fill-btn {
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 8px;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.dry-test-fill-btn:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.6);
+}
+
+.dry-test-fill-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ── Demo banner ─────────────────────────────────────────────────────────── */
 .demo-banner {
   display: flex;
@@ -782,5 +898,7 @@ function handleSubmit() {
   .form-title { font-size: 1.2rem; }
   .demo-banner { flex-direction: column; align-items: flex-start; gap: 12px; }
   .demo-fill-btn { width: 100%; text-align: center; }
+  .dry-test-banner { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .dry-test-fill-btn { width: 100%; text-align: center; }
 }
 </style>
