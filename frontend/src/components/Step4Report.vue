@@ -129,7 +129,7 @@
 
           <!-- Next Step Button - Show after completion -->
           <button v-if="isComplete" class="next-step-btn" @click="goToInteraction">
-            <span>Enter Deep Interaction</span>
+            <span>Перейти к взаимодействию</span>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
               <polyline points="12 5 19 12 12 19"></polyline>
@@ -166,11 +166,11 @@
                   <!-- Report Start -->
                   <template v-if="log.action === 'report_start'">
                     <div class="info-row">
-                      <span class="info-key">Simulation</span>
+                      <span class="info-key">Симуляция</span>
                       <span class="info-val mono">{{ log.details?.simulation_id }}</span>
                     </div>
                     <div class="info-row" v-if="log.details?.simulation_requirement">
-                      <span class="info-key">Requirement</span>
+                      <span class="info-key">Задача</span>
                       <span class="info-val">{{ log.details.simulation_requirement }}</span>
                     </div>
                   </template>
@@ -182,7 +182,7 @@
                   <template v-if="log.action === 'planning_complete'">
                     <div class="status-message success">{{ log.details?.message }}</div>
                     <div class="outline-badge" v-if="log.details?.outline">
-                      {{ log.details.outline.sections?.length || 0 }} sections planned
+                      {{ log.details.outline.sections?.length || 0 }} разделов запланировано
                     </div>
                   </template>
 
@@ -307,7 +307,7 @@
                   <!-- LLM Response -->
                   <template v-if="log.action === 'llm_response'">
                     <div class="llm-meta">
-                      <span class="meta-tag">Iteration {{ log.details?.iteration }}</span>
+                      <span class="meta-tag">Итерация {{ log.details?.iteration }}</span>
                       <span class="meta-tag" :class="{ active: log.details?.has_tool_calls }">
                         Инструменты: {{ log.details?.has_tool_calls ? 'Да' : 'Нет' }}
                       </span>
@@ -377,7 +377,7 @@
     <!-- Bottom Console Logs -->
     <div class="console-logs">
       <div class="log-header">
-        <span class="log-title">CONSOLE OUTPUT</span>
+        <span class="log-title">КОНСОЛЬ</span>
         <span class="log-id">{{ reportId || 'NO_REPORT' }}</span>
       </div>
       <div class="log-content" ref="logContent">

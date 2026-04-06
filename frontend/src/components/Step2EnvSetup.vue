@@ -184,15 +184,15 @@
               <div class="config-grid">
                 <div class="config-item">
                   <span class="config-item-label">Длительность симуляции</span>
-                  <span class="config-item-value">{{ simulationConfig.time_config?.total_simulation_hours || '-' }} hours</span>
+                  <span class="config-item-value">{{ simulationConfig.time_config?.total_simulation_hours || '-' }} ч.</span>
                 </div>
                 <div class="config-item">
                   <span class="config-item-label">Длительность раунда</span>
-                  <span class="config-item-value">{{ simulationConfig.time_config?.minutes_per_round || '-' }} minutes</span>
+                  <span class="config-item-value">{{ simulationConfig.time_config?.minutes_per_round || '-' }} мин.</span>
                 </div>
                 <div class="config-item">
                   <span class="config-item-label">Всего раундов</span>
-                  <span class="config-item-value">{{ Math.floor((simulationConfig.time_config?.total_simulation_hours * 60 / simulationConfig.time_config?.minutes_per_round)) || '-' }} rounds</span>
+                  <span class="config-item-value">{{ Math.floor((simulationConfig.time_config?.total_simulation_hours * 60 / simulationConfig.time_config?.minutes_per_round)) || '-' }} раундов</span>
                 </div>
                 <div class="config-item">
                   <span class="config-item-label">Активных в час</span>
@@ -565,7 +565,7 @@
               :disabled="phase < 4"
               @click="handleStartSimulation"
             >
-              Запустить двухмировую симуляцию ➝
+              Запустить параллельную симуляцию ➝
             </button>
           </div>
         </div>
@@ -669,7 +669,7 @@
     </Transition>
 
     <!-- Bottom Info / Logs -->
-    <div class="system-logs">
+    <div class="system-logs" :class="{ 'logs-collapsed': logsCollapsed }">
       <div class="log-header" @click="logsCollapsed = !logsCollapsed">
         <span class="log-title">СИСТЕМНЫЙ ЛОГ</span>
         <span class="log-id">{{ simulationId || 'NO_SIMULATION' }}</span>
@@ -718,7 +718,8 @@ const expectedTotal = ref(null)
 const simulationConfig = ref(null)
 const selectedProfile = ref(null)
 const showProfilesDetail = ref(true)
-const logsCollapsed = ref(false)
+const logsCollapsed = ref(localStorage.getItem('logsCollapsed') === 'true')
+watch(logsCollapsed, val => localStorage.setItem('logsCollapsed', String(val)))
 
 // Custom agents
 const showAddAgentModal = ref(false)
@@ -2163,6 +2164,8 @@ onUnmounted(() => {
   padding: 0;
   line-height: 1;
 }
+.system-logs.logs-collapsed { padding: 4px 16px; }
+.system-logs.logs-collapsed .log-header { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
 
 .log-content {
   display: flex;
@@ -2699,10 +2702,10 @@ onUnmounted(() => {
 /* ── Custom agents section ─────────────────────────────────────────────── */
 .custom-agents-section {
   margin-top: 20px;
-  padding: 16px 18px;
-  background: rgba(56, 189, 248, 0.04);
-  border: 1px solid rgba(56, 189, 248, 0.15);
-  border-radius: 10px;
+  padding: 14px 16px;
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
 }
 
 .custom-section-header {
@@ -2718,44 +2721,47 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: #38BDF8;
+  color: #1a1a1a;
+  letter-spacing: 0.02em;
 }
 
-.custom-section-icon { font-size: 0.9rem; }
+.custom-section-icon { font-size: 0.85rem; }
 
 .custom-count {
-  background: rgba(56, 189, 248, 0.15);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: #f0f0f0;
+  border: 1px solid #d0d0d0;
   border-radius: 10px;
   padding: 1px 8px;
   font-size: 0.7rem;
-  color: #38BDF8;
+  color: #555;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 .add-agent-btn {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
-  font-weight: 700;
-  background: rgba(56, 189, 248, 0.1);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  border-radius: 7px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #1a1a1a;
+  border: 1px solid #1a1a1a;
+  border-radius: 6px;
   padding: 6px 14px;
-  color: #38BDF8;
+  color: #fff;
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 .add-agent-btn:hover {
-  background: rgba(56, 189, 248, 0.18);
-  border-color: rgba(56, 189, 248, 0.6);
+  background: #333;
+  border-color: #333;
 }
 
 .custom-profiles-list {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
 }
 
 .custom-profile-card {
@@ -2763,9 +2769,9 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: rgba(56, 189, 248, 0.06);
-  border: 1px solid rgba(56, 189, 248, 0.15);
-  border-radius: 8px;
+  background: #f8f8f8;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
   padding: 8px 12px;
 }
 
@@ -2780,11 +2786,11 @@ onUnmounted(() => {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.65rem;
   font-weight: 700;
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: #f0f0f0;
+  border: 1px solid #d8d8d8;
   border-radius: 4px;
   padding: 1px 6px;
-  color: #38BDF8;
+  color: #555;
   flex-shrink: 0;
 }
 
@@ -2792,7 +2798,7 @@ onUnmounted(() => {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #EFF6FF;
+  color: #1a1a1a;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2805,10 +2811,10 @@ onUnmounted(() => {
   padding: 1px 7px;
   flex-shrink: 0;
 }
-.custom-stance.stance-supportive { background: rgba(34,197,94,.12); color: #86EFAC; }
-.custom-stance.stance-opposing   { background: rgba(239,68,68,.12);  color: #FCA5A5; }
-.custom-stance.stance-neutral    { background: rgba(148,163,184,.1); color: #CBD5E1; }
-.custom-stance.stance-observer   { background: rgba(148,163,184,.08);color: #94A3B8; }
+.custom-stance.stance-supportive { background: rgba(34,197,94,.1);  color: #16a34a; }
+.custom-stance.stance-opposing   { background: rgba(239,68,68,.08); color: #dc2626; }
+.custom-stance.stance-neutral    { background: #f0f0f0;             color: #666; }
+.custom-stance.stance-observer   { background: #f5f5f5;             color: #888; }
 
 .custom-card-right {
   display: flex;
@@ -2820,14 +2826,14 @@ onUnmounted(() => {
 .custom-profession {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.7rem;
-  color: #7FA4C4;
+  color: #888;
 }
 
 .custom-delete-btn {
   background: none;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  border: 1px solid #e0e0e0;
   border-radius: 5px;
-  color: #3A5570;
+  color: #aaa;
   width: 22px; height: 22px;
   font-size: 1rem;
   cursor: pointer;
@@ -2835,12 +2841,11 @@ onUnmounted(() => {
   line-height: 1;
   transition: all 0.15s;
 }
-.custom-delete-btn:hover { border-color: #EF4444; color: #F87171; }
+.custom-delete-btn:hover { border-color: #EF4444; color: #EF4444; }
 
 .custom-empty-hint {
   font-size: 0.8rem;
-  color: #3A5570;
+  color: #999;
   line-height: 1.5;
-  font-style: italic;
 }
 </style>

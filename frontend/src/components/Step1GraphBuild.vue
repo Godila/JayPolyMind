@@ -171,7 +171,7 @@
     </div>
 
     <!-- Bottom Info / Logs -->
-    <div class="system-logs">
+    <div class="system-logs" :class="{ 'logs-collapsed': logsCollapsed }">
       <div class="log-header" @click="logsCollapsed = !logsCollapsed">
         <span class="log-title">СИСТЕМНЫЙ ЖУРНАЛ</span>
         <span class="log-id">{{ projectData?.project_id || 'NO_PROJECT' }}</span>
@@ -209,7 +209,8 @@ defineEmits(['next-step'])
 
 const selectedOntologyItem = ref(null)
 const logContent = ref(null)
-const logsCollapsed = ref(false)
+const logsCollapsed = ref(localStorage.getItem('logsCollapsed') === 'true')
+watch(logsCollapsed, val => localStorage.setItem('logsCollapsed', String(val)))
 const creatingSimulation = ref(false)
 
 // Enter environment setup - create simulation and navigate
@@ -677,6 +678,8 @@ watch(() => props.systemLogs.length, () => {
   line-height: 1;
 }
 .log-toggle:hover { color: #aaa; }
+.system-logs.logs-collapsed { padding: 4px 16px; }
+.system-logs.logs-collapsed .log-header { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
 
 .log-content {
   display: flex;

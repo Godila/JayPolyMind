@@ -172,8 +172,8 @@
                     </svg>
                   </div>
                   <div class="tool-content">
-                    <div class="tool-name">InsightForge Deep Attribution</div>
-                    <div class="tool-desc">Aligns real-world seed data with simulation environment state, combines Global/Local Memory mechanisms, provides cross-temporal deep attribution analysis</div>
+                    <div class="tool-name">InsightForge — Глубокая атрибуция</div>
+                    <div class="tool-desc">Сопоставляет реальные данные с состоянием симуляции, задействует механизмы глобальной и локальной памяти для кросс-временного анализа причинно-следственных связей</div>
                   </div>
                 </div>
                 <div class="tool-item tool-blue">
@@ -184,8 +184,8 @@
                     </svg>
                   </div>
                   <div class="tool-content">
-                    <div class="tool-name">PanoramaSearch Panoramic Tracking</div>
-                    <div class="tool-desc">Graph-based breadth-first traversal algorithm, reconstructs event propagation paths, captures full information flow topology</div>
+                    <div class="tool-name">PanoramaSearch — Панорамный поиск</div>
+                    <div class="tool-desc">Обход графа в ширину — восстанавливает пути распространения событий и фиксирует полную топологию информационных потоков</div>
                   </div>
                 </div>
                 <div class="tool-item tool-orange">
@@ -195,8 +195,8 @@
                     </svg>
                   </div>
                   <div class="tool-content">
-                    <div class="tool-name">QuickSearch Fast Retrieval</div>
-                    <div class="tool-desc">GraphRAG-based instant query interface, optimized indexing efficiency, for quickly extracting node attributes and discrete facts</div>
+                    <div class="tool-name">QuickSearch — Быстрый поиск</div>
+                    <div class="tool-desc">Мгновенный интерфейс запросов на базе GraphRAG — для быстрого извлечения атрибутов узлов и отдельных фактов</div>
                   </div>
                 </div>
                 <div class="tool-item tool-green">

@@ -18,7 +18,7 @@
           </div>
           <div class="platform-stats">
             <span class="stat">
-              <span class="stat-label">ROUND</span>
+              <span class="stat-label">РАУНД</span>
               <span class="stat-value mono">{{ runStatus.twitter_current_round || 0 }}<span class="stat-total">/{{ runStatus.total_rounds || maxRounds || '-' }}</span></span>
             </span>
             <span class="stat">
@@ -59,7 +59,7 @@
           </div>
           <div class="platform-stats">
             <span class="stat">
-              <span class="stat-label">ROUND</span>
+              <span class="stat-label">РАУНД</span>
               <span class="stat-value mono">{{ runStatus.reddit_current_round || 0 }}<span class="stat-total">/{{ runStatus.total_rounds || maxRounds || '-' }}</span></span>
             </span>
             <span class="stat">
@@ -270,7 +270,7 @@
     </div>
 
     <!-- Bottom Info / Logs -->
-    <div class="system-logs">
+    <div class="system-logs" :class="{ 'logs-collapsed': logsCollapsed }">
       <div class="log-header" @click="logsCollapsed = !logsCollapsed">
         <span class="log-title">ЖУРНАЛ СИМУЛЯЦИИ</span>
         <span class="log-id">{{ simulationId || 'NO_SIMULATION' }}</span>
@@ -317,7 +317,8 @@ const router = useRouter()
 
 // State
 const isGeneratingReport = ref(false)
-const logsCollapsed = ref(false)
+const logsCollapsed = ref(localStorage.getItem('logsCollapsed') === 'true')
+watch(logsCollapsed, val => localStorage.setItem('logsCollapsed', String(val)))
 const phase = ref(0) // 0: Not started, 1: Running, 2: Completed
 const isStarting = ref(false)
 const isStopping = ref(false)
@@ -1243,6 +1244,8 @@ onUnmounted(() => {
   line-height: 1;
 }
 .log-toggle:hover { color: #aaa; }
+.system-logs.logs-collapsed { padding: 4px 16px; }
+.system-logs.logs-collapsed .log-header { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
 
 .log-content {
   display: flex;

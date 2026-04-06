@@ -230,7 +230,7 @@
         <input type="checkbox" v-model="showEdgeLabels" />
         <span class="slider"></span>
       </label>
-      <span class="toggle-label">Show Edge Labels</span>
+      <span class="toggle-label">Метки связей</span>
     </div>
   </div>
 </template>
