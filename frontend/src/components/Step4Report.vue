@@ -432,31 +432,51 @@ const exportPDF = async () => {
   isExportingPDF.value = true
   try {
     const { default: html2pdf } = await import('html2pdf.js')
+
+    // A4 content width: 210mm - 20mm margins = 190mm ≈ 718px at 96dpi
+    const PDF_WIDTH_PX = 718
+
     await html2pdf().set({
-      margin: [12, 12],
+      margin: [10, 10, 10, 10],
       filename: `report-${props.reportId || 'simulation'}.pdf`,
-      image: { type: 'jpeg', quality: 0.95 },
+      image: { type: 'jpeg', quality: 0.92 },
       html2canvas: {
         scale: 2,
         useCORS: true,
         logging: false,
         scrollX: 0,
         scrollY: 0,
+        windowWidth: PDF_WIDTH_PX,
         onclone: (doc, el) => {
-          // Isolate element as sole child of body — eliminates all parent constraints
+          // 1. Isolate: el as sole child of body — no parent flex/overflow
           const body = doc.body
           body.innerHTML = ''
           body.style.cssText = 'margin:0;padding:0;background:#fff'
           body.appendChild(el)
-          el.style.cssText = [
-            'width:760px', 'max-width:760px', 'overflow:visible',
-            'background:#fff', 'padding:30px 32px 50px', 'position:static',
-            'box-shadow:none', 'border:none', 'flex:none'
-          ].join('!important;') + '!important'
-          const wrapper = el.querySelector('.report-content-wrapper')
-          if (wrapper) wrapper.style.maxWidth = 'none'
+
+          // 2. Exact A4 content width
+          el.style.cssText = `width:${PDF_WIDTH_PX}px!important;max-width:${PDF_WIDTH_PX}px!important;` +
+            'overflow:visible!important;background:#fff!important;' +
+            'padding:28px 32px 48px!important;position:static!important;' +
+            'box-shadow:none!important;border:none!important;flex:none!important'
+
+          // 3. Remove inner max-width constraints
+          el.querySelectorAll('.report-content-wrapper, .insights-section').forEach(n => {
+            n.style.maxWidth = 'none'
+            n.style.width = '100%'
+          })
+
+          // 4. Charts: 2-column fits A4 at this width
           const grid = el.querySelector('.charts-grid')
-          if (grid) grid.style.gridTemplateColumns = '1fr'
+          if (grid) {
+            grid.style.display = 'grid'
+            grid.style.gridTemplateColumns = '1fr 1fr'
+          }
+
+          // 5. Fix flex rows that wrap text awkwardly in narrow containers
+          el.querySelectorAll('.completion-actions, .header-actions').forEach(n => {
+            n.style.display = 'none'
+          })
         }
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
