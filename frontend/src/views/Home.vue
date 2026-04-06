@@ -1,24 +1,25 @@
 <template>
-  <div class="home-root">
+  <div class="landing-root">
     <!-- Ambient background -->
     <div class="bg-ambient">
       <div class="orb orb-1"></div>
       <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
       <div class="grid-overlay"></div>
     </div>
 
-    <!-- Navbar -->
-    <nav class="navbar">
-      <div class="nav-brand">
-        <img src="/logo.png" height="36" class="nav-logo" alt="JayPolyMind">
-        <span class="brand-name">Jay<span class="brand-poly">Poly</span>Mind</span>
-      </div>
-      <div class="nav-right">
-        <button class="nav-login-btn" @click="goToApp">Войти →</button>
+    <!-- ── NAVBAR (sticky) ─────────────────────────────────────────────── -->
+    <nav class="navbar" :class="{ scrolled: navScrolled }">
+      <div class="nav-inner">
+        <div class="nav-brand">
+          <img src="/logo.png" height="36" class="nav-logo" alt="JayPolyMind">
+          <span class="brand-name">Jay<span class="brand-poly">Poly</span>Mind</span>
+        </div>
+        <button class="nav-login-btn" @click="goToApp">Войти &rarr;</button>
       </div>
     </nav>
 
-    <!-- ── HERO: full-bleed split ───────────────────────────────────────── -->
+    <!-- ── 1. HERO ─────────────────────────────────────────────────────── -->
     <section class="hero">
       <div class="hero-left">
         <div class="hero-inner">
@@ -27,23 +28,28 @@
             Предиктивная аналитика поведения аудитории
           </div>
           <h1 class="hero-title">
-            Узнайте реакцию рынка —<br>
+            Узнайте реакцию рынка &mdash;<br>
             <span class="hero-accent">до того, как решение принято.</span>
           </h1>
           <p class="hero-desc">
             <strong>JayPolyMind</strong> моделирует поведение вашей аудитории на основе
             загруженной документации. Платформа создаёт сотни
-            <span class="hl-blue">AI-агентов</span> — каждый с уникальным профилем,
-            убеждениями и логикой поведения — и запускает полноценную симуляцию
-            социальных реакций. Результат: структурированный прогноз за часы,
-            а не месяцы исследований.
+            <span class="hl-blue">AI-агентов</span> &mdash; каждый с уникальным профилем,
+            убеждениями и логикой поведения &mdash; и запускает полноценную симуляцию
+            социальных реакций.
           </p>
-          <p class="hero-slogan">
-            Принимайте стратегические решения с данными, а не догадками<span class="cursor">_</span>
-          </p>
+          <div class="hero-ctas">
+            <button class="btn-primary" @click="goToApp">
+              <span>Начать симуляцию</span>
+              <span class="btn-arrow">&rarr;</span>
+            </button>
+            <a href="#how-it-works" class="btn-ghost" @click.prevent="scrollTo('how-it-works')">
+              Смотреть демо &darr;
+            </a>
+          </div>
           <div class="hero-kpi">
             <div class="kpi-item">
-              <span class="kpi-val">В 10×</span>
+              <span class="kpi-val">x10</span>
               <span class="kpi-lbl">быстрее традиционных исследований</span>
             </div>
             <div class="kpi-sep"></div>
@@ -71,8 +77,25 @@
 
     <main class="main-wrap">
 
-      <!-- ── USE CASES ──────────────────────────────────────────────────── -->
-      <section class="use-cases">
+      <!-- ── 2. PROBLEM ──────────────────────────────────────────────────── -->
+      <section class="section pain-section" v-observe>
+        <div class="section-head">
+          <span class="section-eyebrow">Проблема</span>
+          <h2 class="section-title">Решения принимаются вслепую</h2>
+          <p class="section-sub">Традиционные методы тестирования реакций дороги, медленны и ненадёжны</p>
+        </div>
+        <div class="pain-grid">
+          <div class="pain-card" v-for="(p, i) in pains" :key="i">
+            <div class="pain-icon">{{ p.icon }}</div>
+            <h3 class="pain-title">{{ p.title }}</h3>
+            <p class="pain-desc">{{ p.desc }}</p>
+            <div class="pain-stat">{{ p.stat }}</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 3. USE CASES ────────────────────────────────────────────────── -->
+      <section class="section" v-observe>
         <div class="section-head">
           <span class="section-eyebrow">Применение</span>
           <h2 class="section-title">Где работает JayPolyMind</h2>
@@ -86,78 +109,372 @@
         </div>
       </section>
 
-      <!-- ── HOW IT WORKS ───────────────────────────────────────────────── -->
-      <section class="how-it-works">
+      <!-- ── 4. HOW IT WORKS ─────────────────────────────────────────────── -->
+      <section id="how-it-works" class="section" v-observe>
         <div class="section-head">
           <span class="section-eyebrow">Процесс</span>
           <h2 class="section-title">Пять шагов от документа до прогноза</h2>
         </div>
-        <div class="steps-row">
-          <div v-for="(step, i) in steps" :key="i" class="step-card" :style="{ '--i': i }">
-            <div class="step-num-badge">{{ step.num }}</div>
-            <h4 class="step-name">{{ step.title }}</h4>
-            <p class="step-detail">{{ step.desc }}</p>
+        <div class="steps-timeline">
+          <div class="timeline-line"></div>
+          <div v-for="(step, i) in steps" :key="i" class="step-item" :class="{ reverse: i % 2 === 1 }">
+            <div class="step-content">
+              <div class="step-num-badge">{{ step.num }}</div>
+              <h4 class="step-name">{{ step.title }}</h4>
+              <p class="step-detail">{{ step.desc }}</p>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- ── CTA ──────────────────────────────────────────────────────────── -->
-      <section class="cta-section">
-        <div class="cta-inner">
-          <span class="section-eyebrow">Готовы к запуску?</span>
-          <h2 class="cta-title">Начните симуляцию прямо сейчас</h2>
-          <p class="cta-desc">Войдите в платформу, загрузите документы и получите аналитику за часы.</p>
-          <button class="cta-btn" @click="goToApp">
-            <span>Войти в приложение</span>
-            <span class="btn-arrow">→</span>
-          </button>
+      <!-- ── 5. METRICS ──────────────────────────────────────────────────── -->
+      <section class="section metrics-section" v-observe>
+        <div class="section-head">
+          <span class="section-eyebrow">Эффективность</span>
+          <h2 class="section-title">Цифры говорят сами</h2>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-card" v-for="(m, i) in metrics" :key="i">
+            <div class="metric-val">{{ m.val }}</div>
+            <div class="metric-lbl">{{ m.label }}</div>
+          </div>
+        </div>
+        <div class="compare-table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>Критерий</th>
+                <th>Фокус-группы</th>
+                <th>Опросы</th>
+                <th>ChatGPT</th>
+                <th class="highlight-col">JayPolyMind</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(row, i) in compareRows" :key="i">
+                <td class="compare-label">{{ row.label }}</td>
+                <td>{{ row.focus }}</td>
+                <td>{{ row.survey }}</td>
+                <td>{{ row.chatgpt }}</td>
+                <td class="highlight-col">{{ row.jpm }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
+
+      <!-- ── 6. TECHNOLOGY ───────────────────────────────────────────────── -->
+      <section id="technology" class="section" v-observe>
+        <div class="section-head">
+          <span class="section-eyebrow">Технология</span>
+          <h2 class="section-title">Не просто чат-бот</h2>
+          <p class="section-sub">Многослойная архитектура для реалистичной симуляции</p>
+        </div>
+        <div class="tech-grid">
+          <div class="tech-card" v-for="(t, i) in techFeatures" :key="i">
+            <div class="tech-icon">{{ t.icon }}</div>
+            <h3 class="tech-title">{{ t.title }}</h3>
+            <p class="tech-desc">{{ t.desc }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 7. DEMO CASES ───────────────────────────────────────────────── -->
+      <section class="section" v-observe>
+        <div class="section-head">
+          <span class="section-eyebrow">Кейсы</span>
+          <h2 class="section-title">Посмотрите в действии</h2>
+        </div>
+        <div class="demo-grid">
+          <div v-for="(d, i) in demoCases" :key="i" class="demo-card">
+            <div class="demo-badge">{{ d.tag }}</div>
+            <h3 class="demo-title">{{ d.title }}</h3>
+            <p class="demo-desc">{{ d.desc }}</p>
+            <button class="demo-btn" @click="goToApp">Запустить демо &rarr;</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 8. PRICING (Pay-as-you-go) ──────────────────────────────────── -->
+      <section id="pricing" class="section pricing-section" v-observe>
+        <div class="section-head">
+          <span class="section-eyebrow">Тарификация</span>
+          <h2 class="section-title">Платите только за то, что используете</h2>
+          <p class="section-sub">Без подписок. Пополните баланс &mdash; запускайте симуляции. Платите за токены.</p>
+        </div>
+
+        <div class="pricing-layout">
+          <!-- Calculator -->
+          <div class="calc-card">
+            <h3 class="calc-title">Калькулятор стоимости</h3>
+            <div class="calc-row">
+              <label class="calc-label">Агентов: <strong>{{ agents }}</strong></label>
+              <input type="range" v-model.number="agents" min="10" max="100" step="5" class="calc-slider">
+              <div class="calc-range"><span>10</span><span>100</span></div>
+            </div>
+            <div class="calc-row">
+              <label class="calc-label">Раундов: <strong>{{ rounds }}</strong></label>
+              <input type="range" v-model.number="rounds" min="3" max="10" step="1" class="calc-slider">
+              <div class="calc-range"><span>3</span><span>10</span></div>
+            </div>
+            <div class="calc-result">
+              <div class="calc-result-row">
+                <span>Симуляция</span>
+                <span class="calc-price">${{ simPrice }}</span>
+              </div>
+              <div class="calc-result-row sub">
+                <span>+ Отчёт</span>
+                <span>~$2.00</span>
+              </div>
+              <div class="calc-result-row sub">
+                <span>+ Интервью (10 агентов)</span>
+                <span>~$1.00</span>
+              </div>
+              <div class="calc-divider"></div>
+              <div class="calc-result-row total">
+                <span>Итого</span>
+                <span class="calc-total">${{ totalPrice }}</span>
+              </div>
+            </div>
+            <button class="btn-primary calc-cta" @click="goToApp">Пополнить баланс &rarr;</button>
+          </div>
+
+          <!-- Presets -->
+          <div class="presets">
+            <div v-for="(pr, i) in presets" :key="i" class="preset-card" @click="agents = pr.agents; rounds = pr.rounds">
+              <div class="preset-name">{{ pr.name }}</div>
+              <div class="preset-config">{{ pr.agents }} агентов &middot; {{ pr.rounds }} раундов</div>
+              <div class="preset-price">~${{ pr.price }}</div>
+            </div>
+            <div class="bonus-card">
+              <div class="bonus-title">Бонусы при пополнении</div>
+              <div class="bonus-row"><span>от $50</span><span class="bonus-val">+10%</span></div>
+              <div class="bonus-row"><span>от $200</span><span class="bonus-val">+20%</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 9. STACK + ROADMAP ──────────────────────────────────────────── -->
+      <section class="section" v-observe>
+        <div class="section-head">
+          <span class="section-eyebrow">Фундамент</span>
+          <h2 class="section-title">Построено на надёжном стеке</h2>
+        </div>
+        <div class="stack-bar">
+          <div v-for="(s, i) in stack" :key="i" class="stack-item">
+            <span class="stack-name">{{ s.name }}</span>
+            <span class="stack-role">{{ s.role }}</span>
+          </div>
+        </div>
+
+        <div class="roadmap-head">
+          <span class="section-eyebrow">Roadmap</span>
+          <h2 class="section-title">Сейчас и дальше</h2>
+        </div>
+        <div class="roadmap-split">
+          <div class="roadmap-col">
+            <div class="roadmap-col-label now">Реализовано</div>
+            <ul class="roadmap-now-list">
+              <li v-for="(item, j) in roadmapNow" :key="j">{{ item }}</li>
+            </ul>
+          </div>
+          <div class="roadmap-col future">
+            <div class="roadmap-col-label">В разработке</div>
+            <div class="roadmap-future-grid">
+              <div v-for="(r, i) in roadmapFuture" :key="i" class="roadmap-future-card">
+                <h4 class="rf-title">{{ r.title }}</h4>
+                <p class="rf-desc">{{ r.desc }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 10. FOOTER CTA ──────────────────────────────────────────────── -->
+      <section class="cta-section" v-observe>
+        <div class="cta-inner">
+          <span class="section-eyebrow">Готовы к запуску?</span>
+          <h2 class="cta-title">Протестируйте реакцию на ваш документ</h2>
+          <p class="cta-desc">Загрузите документ, настройте агентов и получите прогноз за минуты.</p>
+          <div class="cta-buttons">
+            <button class="btn-primary" @click="goToApp">
+              <span>Начать бесплатно</span>
+              <span class="btn-arrow">&rarr;</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── FOOTER ──────────────────────────────────────────────────────── -->
+      <footer class="footer">
+        <div class="footer-inner">
+          <div class="footer-brand">
+            <img src="/logo.png" height="28" alt="JayPolyMind">
+            <span class="brand-name sm">Jay<span class="brand-poly">Poly</span>Mind</span>
+          </div>
+          <div class="footer-links">
+            <a href="#how-it-works" @click.prevent="scrollTo('how-it-works')">Как работает</a>
+            <a href="#technology" @click.prevent="scrollTo('technology')">Технология</a>
+            <a href="#pricing" @click.prevent="scrollTo('pricing')">Цены</a>
+          </div>
+          <div class="footer-copy">&copy; 2026 JayPolyMind. All rights reserved.</div>
+        </div>
+      </footer>
     </main>
   </div>
 </template>
 
 <script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { isAuthenticated } from '../store/auth.js'
 
+// ── Navigation ─────────────────────────────────────────────────────────────
+const router = useRouter()
+const navScrolled = ref(false)
+
+function goToApp() {
+  router.push(isAuthenticated() ? { name: 'App' } : { name: 'Login' })
+}
+
+function scrollTo(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+}
+
+function onScroll() {
+  navScrolled.value = window.scrollY > 40
+}
+
+onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
+onUnmounted(() => window.removeEventListener('scroll', onScroll))
+
+// ── Scroll-reveal directive ────────────────────────────────────────────────
+const vObserve = {
+  mounted(el) {
+    el.classList.add('reveal')
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        el.classList.add('visible')
+        obs.disconnect()
+      }
+    }, { threshold: 0.12 })
+    obs.observe(el)
+  }
+}
+
+// ── Pricing calculator ─────────────────────────────────────────────────────
+const agents = ref(50)
+const rounds = ref(5)
+
+const simPrice = computed(() => {
+  const tokens = agents.value * rounds.value * 40000
+  const cost = (tokens / 1000000) * 4.50
+  return cost.toFixed(2)
+})
+
+const totalPrice = computed(() => {
+  return (parseFloat(simPrice.value) + 3.00).toFixed(2)
+})
+
+const presets = [
+  { name: 'Быстрый тест', agents: 20, rounds: 3, price: '2' },
+  { name: 'Стандарт', agents: 50, rounds: 5, price: '8' },
+  { name: 'Глубокий анализ', agents: 100, rounds: 10, price: '30' },
+]
+
 // ── Static data ────────────────────────────────────────────────────────────
+const pains = [
+  {
+    icon: '\u{1F4B8}',
+    title: 'Фокус-группы',
+    desc: 'Дорого, долго и мало участников. Нерепрезентативная выборка из 8-15 человек.',
+    stat: '$5K - $50K за сессию'
+  },
+  {
+    icon: '\u{1F50D}',
+    title: 'Опросы',
+    desc: 'Респонденты отвечают "как надо", а не как думают. Социальная желательность искажает данные.',
+    stat: '2-4 недели на результат'
+  },
+  {
+    icon: '\u{26A0}\u{FE0F}',
+    title: 'Публикация вслепую',
+    desc: 'Без предварительного теста ошибка сразу на виду у аудитории. PR-кризис может стоить миллионы.',
+    stat: '$1M+ потенциальных потерь'
+  }
+]
 
 const useCases = [
-  {
-    title: 'Регуляторные изменения',
-    desc: 'Оцените восприятие новых норм до их введения — по каждому сегменту аудитории'
-  },
-  {
-    title: 'Внутренние трансформации',
-    desc: 'Смоделируйте реакцию команды на реструктуризацию, слияние или смену стратегии'
-  },
-  {
-    title: 'Запуск коммуникаций',
-    desc: 'Протестируйте месседжи и позиционирование до публичного выхода'
-  },
-  {
-    title: 'Вывод продукта на рынок',
-    desc: 'Предскажите поведение сегментов и выявите точки сопротивления заранее'
-  },
+  { title: 'Регуляторные изменения', desc: 'Оцените восприятие новых норм до их введения по каждому сегменту аудитории' },
+  { title: 'Внутренние трансформации', desc: 'Смоделируйте реакцию команды на реструктуризацию, слияние или смену стратегии' },
+  { title: 'Запуск коммуникаций', desc: 'Протестируйте месседжи и позиционирование до публичного выхода' },
+  { title: 'Вывод продукта на рынок', desc: 'Предскажите поведение сегментов и выявите точки сопротивления заранее' },
 ]
 
 const steps = [
-  { num: '01', title: 'Граф знаний',        desc: 'Платформа анализирует документ, выделяет сущности и связи' },
-  { num: '02', title: 'Профили агентов',     desc: 'LLM создаёт психологические портреты стейкхолдеров' },
-  { num: '03', title: 'Симуляция',           desc: 'Агенты взаимодействуют в среде, поведение фиксируется в реальном времени' },
-  { num: '04', title: 'Аналитический отчёт', desc: 'ReportAgent синтезирует итоги и формирует структурированный прогноз' },
-  { num: '05', title: 'Углублённый диалог',  desc: 'Уточняйте результаты в диалоге с любым агентом или с ReportAgent' },
+  { num: '01', title: 'Граф знаний', desc: 'Платформа анализирует документ, выделяет сущности, факты и связи между ними' },
+  { num: '02', title: 'Профили агентов', desc: 'LLM создаёт психологические портреты: MBTI, возраст, профессия, предубеждения' },
+  { num: '03', title: 'Симуляция', desc: 'Агенты обсуждают на Twitter и Reddit, публикуют, комментируют, меняют мнения' },
+  { num: '04', title: 'Аналитический отчёт', desc: 'ReportAgent синтезирует итоги: сентимент, ключевые инсайты, зоны риска' },
+  { num: '05', title: 'Углублённый диалог', desc: 'Задавайте вопросы любому агенту: "Почему ты так отреагировал?"' },
 ]
 
-// ── Navigation ─────────────────────────────────────────────────────────────
+const metrics = [
+  { val: 'x200', label: 'быстрее фокус-групп' },
+  { val: 'x100', label: 'дешевле традиционных исследований' },
+  { val: '100+', label: 'AI-агентов за один запуск' },
+  { val: '5', label: 'архетипов личностей' },
+]
 
-const router = useRouter()
+const compareRows = [
+  { label: 'Время', focus: '2-4 недели', survey: '1-4 недели', chatgpt: '5 минут', jpm: '10-15 минут' },
+  { label: 'Стоимость', focus: '$5K-50K', survey: '$10K-100K', chatgpt: '~$0.10', jpm: '$2-30' },
+  { label: 'Респонденты', focus: '8-15', survey: '100-1000', chatgpt: '1', jpm: '50-100+' },
+  { label: 'Динамика', focus: 'Есть', survey: 'Нет', chatgpt: 'Нет', jpm: 'Есть' },
+  { label: 'Воспроизводимость', focus: 'Нет', survey: 'Частичная', chatgpt: 'Нет', jpm: '100%' },
+]
 
-function goToApp() {
-  // If already logged in → go straight to app, otherwise → login
-  router.push(isAuthenticated() ? { name: 'App' } : { name: 'Login' })
-}
+const techFeatures = [
+  { icon: '\u{1F578}\u{FE0F}', title: 'Граф знаний', desc: 'Документ разбирается в структурированный граф сущностей в Neo4j, а не просто передаётся как текст' },
+  { icon: '\u{1F9E0}', title: 'Психопрофили', desc: 'Каждый агент имеет MBTI-тип, возраст, профессию и уникальные предубеждения' },
+  { icon: '\u{1F4F1}', title: 'Dual-platform', desc: 'Одновременная симуляция на Twitter (быстрые реакции) и Reddit (глубокие дискуссии)' },
+  { icon: '\u{1F504}', title: 'Эволюция мнений', desc: 'Агенты меняют позицию под влиянием аргументов других участников, как реальные люди' },
+]
+
+const demoCases = [
+  { tag: 'Продукт', title: 'Запуск нового продукта', desc: 'Как отреагирует рынок на ваш анонс? Агенты-скептики, эксперты и энтузиасты покажут реальную картину.' },
+  { tag: 'Регуляторика', title: 'Регуляторный анализ', desc: 'Оцените реакцию стейкхолдеров на новые нормы и требования до их официального введения.' },
+  { tag: 'HR', title: 'Корпоративная трансформация', desc: 'Протестируйте внутренние коммуникации о реструктуризации, слиянии или смене стратегии.' },
+]
+
+const stack = [
+  { name: 'Vue 3', role: 'Frontend' },
+  { name: 'Flask', role: 'Backend' },
+  { name: 'Neo4j', role: 'Graph DB' },
+  { name: 'CAMEL-AI', role: 'Agents' },
+  { name: 'OASIS', role: 'Simulation' },
+  { name: 'OpenRouter', role: 'LLM API' },
+  { name: 'Docker', role: 'Deploy' },
+]
+
+const roadmapNow = [
+  'Мультиагентная симуляция (50-100+ агентов)',
+  'Граф знаний на базе Neo4j',
+  'Генерация аналитических отчётов',
+  'Интервью и диалог с агентами',
+  'Демо-кейсы и сценарии',
+]
+
+const roadmapFuture = [
+  { title: 'Pay-as-you-go биллинг', desc: 'Оплата за фактическое потребление токенов. Пополняете баланс -- платите только за использованные симуляции' },
+  { title: 'Deep Research', desc: 'Автоматическое обогащение документа: парсинг открытых источников, новостей, соцсетей для построения расширенного контекста перед симуляцией' },
+  { title: 'A/B симуляции', desc: 'Загрузите два варианта документа и сравните реакции аудитории side-by-side. Выберите стратегию на основе данных' },
+  { title: 'Отраслевые шаблоны агентов', desc: 'Готовые наборы персон для финтеха, фармы, ритейла, госсектора -- с отраслевой экспертизой и терминологией' },
+  { title: 'On-premise развёртывание', desc: 'Полностью локальная установка с Ollama LLM. Данные не покидают периметр компании. Для банков, госструктур и defence' },
+  { title: 'Детализированная аналитика сентимента', desc: 'Эволюция настроений по раундам, heatmap реакций по сегментам, выявление точек перелома мнений' },
+  { title: 'Поведенческие паттерны и кластеризация', desc: 'Автоматическое выделение групп агентов со схожим поведением, анализ лидеров мнений и цепочек влияния' },
+]
 </script>
 
 <style scoped>
@@ -182,12 +499,23 @@ function goToApp() {
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-.home-root {
+.landing-root {
   min-height: 100vh;
   background: var(--bg);
   color: var(--txt);
   font-family: var(--body);
   overflow-x: hidden;
+}
+
+/* ── Scroll reveal ───────────────────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* ── Ambient bg ──────────────────────────────────────────────────────────── */
@@ -198,6 +526,7 @@ function goToApp() {
 }
 .orb-1 { width: 800px; height: 800px; background: #3B82F6; top: -300px; left: -200px; }
 .orb-2 { width: 600px; height: 600px; background: #0EA5E9; bottom: -100px; right: -150px; }
+.orb-3 { width: 400px; height: 400px; background: #6366F1; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.05; }
 .grid-overlay {
   position: absolute; inset: 0;
   background-image:
@@ -208,12 +537,22 @@ function goToApp() {
 
 /* ── Navbar ──────────────────────────────────────────────────────────────── */
 .navbar {
-  position: relative; z-index: 10;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: #F8FAFF;
+  border-bottom: none;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.navbar.scrolled {
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+}
+.nav-inner {
+  width: 100%;
+  max-width: 1360px; margin: 0 auto;
   height: 68px;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 52px;
-  border-bottom: 1px solid #EAEAEA;
-  background: #FFFFFF;
 }
 .nav-brand { display: flex; align-items: center; gap: 12px; }
 .nav-logo { object-fit: contain; }
@@ -222,8 +561,8 @@ function goToApp() {
   font-size: 1.05rem; font-weight: 800;
   letter-spacing: 0.5px; color: #111111;
 }
+.brand-name.sm { font-size: 0.9rem; color: #EFF6FF; }
 .brand-poly { color: #38BDF8; }
-.nav-right { display: flex; align-items: center; gap: 20px; }
 .nav-login-btn {
   font-family: var(--mono); font-size: 0.8rem;
   color: #1D4ED8; background: rgba(29,78,216,0.06);
@@ -232,37 +571,15 @@ function goToApp() {
   transition: all .2s; font-weight: 600;
 }
 .nav-login-btn:hover { background: rgba(29,78,216,0.12); border-color: #1D4ED8; }
-.nav-badge {
-  font-family: var(--mono);
-  font-size: 0.7rem; color: var(--txt3);
-  border: 1px solid rgba(59,130,246,0.2);
-  padding: 3px 10px; border-radius: 20px;
-}
-.nav-link {
-  font-family: var(--mono);
-  font-size: 0.8rem; color: var(--txt2);
-  text-decoration: none;
-  display: flex; align-items: center; gap: 4px;
-  transition: color .2s;
-}
-.nav-link:hover { color: var(--acc1); }
 
-/* ── Main wrap ───────────────────────────────────────────────────────────── */
-.main-wrap {
-  position: relative; z-index: 1;
-  max-width: 1360px; margin: 0 auto;
-  padding: 80px 52px 100px;
-}
-
-/* ── HERO: split layout ──────────────────────────────────────────────────── */
+/* ── HERO ────────────────────────────────────────────────────────────────── */
 .hero {
   display: flex;
-  min-height: 600px;
+  min-height: 100vh;
   position: relative;
   z-index: 1;
+  margin-top: 68px;
 }
-
-/* Left: light side */
 .hero-left {
   flex: 1;
   background: #F8FAFF;
@@ -272,8 +589,6 @@ function goToApp() {
   padding: 88px 80px 88px max(52px, calc(50vw - 720px));
 }
 .hero-inner { max-width: 600px; width: 100%; }
-
-/* Right: dark side */
 .hero-right {
   flex: 0 0 44%;
   background: #060E1C;
@@ -297,8 +612,6 @@ function goToApp() {
   background: #0EA5E9; opacity: 0.3;
   bottom: -80px; right: -80px;
 }
-
-/* Tag */
 .hero-tag {
   display: inline-flex; align-items: center; gap: 9px;
   font-family: var(--mono); font-size: 0.72rem;
@@ -314,42 +627,47 @@ function goToApp() {
   animation: pulse 2s infinite;
 }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-/* Title */
 .hero-title {
   font-family: var(--display);
-  font-size: clamp(2.2rem, 3.4vw, 3.2rem);
+  font-size: clamp(2rem, 3.2vw, 3rem);
   font-weight: 700; line-height: 1.15;
   letter-spacing: -1.5px;
   color: #0F172A;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
-/* A: тёмно-синий акцент без градиента */
-.hero-accent {
-  color: #1E40AF;
-  display: block;
-}
-
-/* Description */
+.hero-accent { color: #1E40AF; display: block; }
 .hero-desc {
-  font-size: 1.02rem; line-height: 1.9;
+  font-size: 1rem; line-height: 1.8;
   color: #475569; max-width: 560px;
   margin-bottom: 28px;
 }
 .hero-desc strong { color: #0F172A; font-weight: 600; }
 .hl-blue { color: #2563EB; font-weight: 500; }
-
-/* Slogan */
-.hero-slogan {
-  font-size: 0.9rem; color: #374151;
-  border-left: 2px solid #3B82F6;
-  padding-left: 16px; margin-bottom: 44px;
-  font-weight: 500;
+.hero-ctas {
+  display: flex; gap: 16px; align-items: center;
+  margin-bottom: 44px;
 }
-.cursor { color: #3B82F6; animation: blink 1.2s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-/* KPI */
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 50%, #0EA5E9 100%);
+  color: #fff; border: none;
+  border-radius: 8px; padding: 14px 28px;
+  font-family: var(--display);
+  font-size: 0.88rem; font-weight: 700;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  box-shadow: 0 4px 24px rgba(59,130,246,0.35);
+}
+.btn-primary:hover { opacity: 0.9; transform: translateY(-2px); }
+.btn-arrow { font-size: 1.1rem; }
+.btn-ghost {
+  font-family: var(--mono); font-size: 0.82rem;
+  color: #2563EB; text-decoration: none;
+  border: 1px solid rgba(37,99,235,0.3);
+  padding: 12px 24px; border-radius: 8px;
+  transition: all 0.2s; font-weight: 500;
+}
+.btn-ghost:hover { background: rgba(37,99,235,0.06); border-color: #2563EB; }
 .hero-kpi { display: flex; align-items: center; gap: 32px; }
 .kpi-item { display: flex; flex-direction: column; gap: 4px; }
 .kpi-val {
@@ -358,11 +676,9 @@ function goToApp() {
 }
 .kpi-lbl { font-size: 0.78rem; color: #94A3B8; max-width: 120px; line-height: 1.4; }
 .kpi-sep { width: 1px; height: 36px; background: rgba(0,0,0,0.1); }
-
-/* Logo showcase */
 .logo-showcase {
   position: relative;
-  width: 460px; height: 460px;
+  width: 420px; height: 420px;
   display: flex; align-items: center; justify-content: center;
   z-index: 1;
 }
@@ -378,23 +694,34 @@ function goToApp() {
 }
 @keyframes glowPulse {
   0%,100% { opacity: 0.75; transform: scale(1); }
-  50%     { opacity: 1;    transform: scale(1.1); }
+  50%     { opacity: 1;    transform: scale(1.08); }
 }
 .logo-img {
-  width: 460px; height: 460px;
+  width: 420px; height: 420px;
   object-fit: contain;
   animation: float 6s ease-in-out infinite;
   filter:
     drop-shadow(0 0 40px rgba(59,130,246,0.75))
-    drop-shadow(0 0 100px rgba(14,165,233,0.45));
+    drop-shadow(0 0 80px rgba(14,165,233,0.4));
 }
 @keyframes float {
   0%,100% { transform: translateY(0); }
-  50%     { transform: translateY(-16px); }
+  50%     { transform: translateY(-14px); }
 }
 
-/* ── Section head (shared) ───────────────────────────────────────────────── */
-.section-head { margin-bottom: 48px; }
+/* ── Main wrap ───────────────────────────────────────────────────────────── */
+.main-wrap {
+  position: relative; z-index: 1;
+  max-width: 1360px; margin: 0 auto;
+  padding: 0 52px 0;
+}
+
+/* ── Section (shared) ────────────────────────────────────────────────────── */
+.section {
+  padding: 100px 0;
+  border-top: 1px solid rgba(59,130,246,0.08);
+}
+.section-head { margin-bottom: 56px; }
 .section-eyebrow {
   font-family: var(--mono);
   font-size: 0.7rem; color: var(--acc1);
@@ -403,16 +730,56 @@ function goToApp() {
 }
 .section-title {
   font-family: var(--display);
-  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-size: clamp(1.5rem, 2.5vw, 2.2rem);
   font-weight: 700; color: var(--txt);
   letter-spacing: -0.5px;
 }
+.section-sub {
+  font-size: 1rem; color: var(--txt2);
+  margin-top: 12px; max-width: 560px; line-height: 1.6;
+}
+
+/* ── PAIN SECTION ────────────────────────────────────────────────────────── */
+.pain-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.pain-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 28px;
+  transition: border-color 0.3s, transform 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.pain-card::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, #F59E0B, #EF4444);
+  opacity: 0; transition: opacity 0.3s;
+}
+.pain-card:hover { border-color: rgba(245,158,11,0.3); transform: translateY(-4px); }
+.pain-card:hover::after { opacity: 1; }
+.pain-icon { font-size: 2rem; margin-bottom: 16px; }
+.pain-title {
+  font-family: var(--display);
+  font-size: 1rem; font-weight: 700;
+  color: var(--txt); margin-bottom: 10px;
+}
+.pain-desc { font-size: 0.88rem; color: var(--txt2); line-height: 1.65; margin-bottom: 16px; }
+.pain-stat {
+  font-family: var(--mono); font-size: 0.75rem;
+  color: #F59E0B; font-weight: 600;
+  padding: 6px 12px;
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 6px;
+  display: inline-block;
+}
 
 /* ── USE CASES ───────────────────────────────────────────────────────────── */
-.use-cases {
-  padding: 72px 0;
-  border-top: 1px solid rgba(59,130,246,0.1);
-}
 .cases-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -446,69 +813,393 @@ function goToApp() {
 }
 .case-desc { font-size: 0.85rem; color: var(--txt2); line-height: 1.6; }
 
-/* ── HOW IT WORKS ────────────────────────────────────────────────────────── */
-.how-it-works {
-  padding: 72px 0;
-  border-top: 1px solid rgba(59,130,246,0.1);
+/* ── HOW IT WORKS (timeline) ─────────────────────────────────────────────── */
+.steps-timeline {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
 }
-.steps-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+.timeline-line {
+  position: absolute;
+  left: 19px; top: 0; bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, var(--acc1), var(--acc2), transparent);
+}
+.step-item {
+  display: flex;
+  padding: 0 0 48px 0;
   position: relative;
 }
-.steps-row::before {
-  content: '';
-  position: absolute; top: 19px; left: 60px; right: 60px; height: 1px;
-  background: linear-gradient(90deg,
-    transparent,
-    rgba(59,130,246,0.3) 10%,
-    rgba(59,130,246,0.3) 90%,
-    transparent
-  );
+.step-item:last-child { padding-bottom: 0; }
+.step-content {
+  margin-left: 52px;
+  padding: 24px 28px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  flex: 1;
+  transition: border-color 0.3s, transform 0.2s;
 }
-.step-card {
-  padding: 0 16px;
-  text-align: center;
-  animation: fadeUp .5s ease both;
-  animation-delay: calc(var(--i, 0) * 0.1s);
-}
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+.step-content:hover { border-color: var(--border-h); transform: translateX(4px); }
 .step-num-badge {
+  position: absolute;
+  left: 0; top: 24px;
   width: 40px; height: 40px;
   border-radius: 50%;
-  background: var(--bg2);
-  border: 1px solid rgba(59,130,246,0.4);
+  background: var(--bg);
+  border: 2px solid var(--acc1);
   display: flex; align-items: center; justify-content: center;
   font-family: var(--mono); font-size: 0.72rem; font-weight: 600;
   color: var(--acc1);
-  margin: 0 auto 20px;
-  position: relative; z-index: 1;
-  transition: background .2s, border-color .2s;
-}
-.step-card:hover .step-num-badge {
-  background: rgba(59,130,246,0.12);
-  border-color: var(--acc1);
+  z-index: 2;
 }
 .step-name {
   font-family: var(--display);
-  font-size: 0.82rem; font-weight: 700;
-  color: var(--txt); margin-bottom: 8px; line-height: 1.3;
+  font-size: 0.95rem; font-weight: 700;
+  color: var(--txt); margin-bottom: 8px;
 }
-.step-detail { font-size: 0.78rem; color: var(--txt2); line-height: 1.6; }
+.step-detail { font-size: 0.85rem; color: var(--txt2); line-height: 1.6; }
+
+/* ── METRICS ─────────────────────────────────────────────────────────────── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 56px;
+}
+.metric-card {
+  text-align: center;
+  padding: 36px 20px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: border-color 0.3s;
+}
+.metric-card:hover { border-color: var(--border-h); }
+.metric-val {
+  font-family: var(--display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--acc1), var(--acc2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+.metric-lbl { font-size: 0.85rem; color: var(--txt2); }
+
+/* Compare table */
+.compare-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.compare-table th {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--txt3);
+  padding: 16px 20px;
+  text-align: left;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+.compare-table td {
+  padding: 14px 20px;
+  color: var(--txt2);
+  border-bottom: 1px solid rgba(59,130,246,0.06);
+}
+.compare-label { color: var(--txt); font-weight: 500; }
+.highlight-col {
+  color: var(--acc2) !important;
+  font-weight: 600 !important;
+  background: rgba(56,189,248,0.04);
+}
+
+/* ── TECHNOLOGY ──────────────────────────────────────────────────────────── */
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+.tech-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 32px;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.tech-card:hover { border-color: var(--border-h); transform: translateY(-4px); }
+.tech-icon { font-size: 2rem; margin-bottom: 16px; }
+.tech-title {
+  font-family: var(--display);
+  font-size: 1rem; font-weight: 700;
+  color: var(--txt); margin-bottom: 10px;
+}
+.tech-desc { font-size: 0.88rem; color: var(--txt2); line-height: 1.65; }
+
+/* ── DEMO CASES ──────────────────────────────────────────────────────────── */
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.demo-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 28px;
+  display: flex; flex-direction: column;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.demo-card:hover { border-color: var(--border-h); transform: translateY(-4px); }
+.demo-badge {
+  font-family: var(--mono); font-size: 0.68rem;
+  color: var(--acc2); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  margin-bottom: 16px;
+}
+.demo-title {
+  font-family: var(--display);
+  font-size: 1rem; font-weight: 700;
+  color: var(--txt); margin-bottom: 10px;
+}
+.demo-desc {
+  font-size: 0.85rem; color: var(--txt2); line-height: 1.6;
+  flex: 1; margin-bottom: 20px;
+}
+.demo-btn {
+  font-family: var(--mono); font-size: 0.78rem;
+  color: var(--acc1); background: transparent;
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 8px; padding: 10px 16px;
+  cursor: pointer; transition: all 0.2s;
+  font-weight: 600; text-align: center;
+}
+.demo-btn:hover { background: rgba(59,130,246,0.08); border-color: var(--acc1); }
+
+/* ── PRICING ─────────────────────────────────────────────────────────────── */
+.pricing-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 32px;
+  align-items: start;
+}
+.calc-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 36px;
+}
+.calc-title {
+  font-family: var(--display);
+  font-size: 1.1rem; font-weight: 700;
+  color: var(--txt); margin-bottom: 32px;
+}
+.calc-row { margin-bottom: 28px; }
+.calc-label {
+  font-size: 0.88rem; color: var(--txt2);
+  display: block; margin-bottom: 10px;
+}
+.calc-label strong { color: var(--acc2); font-weight: 700; }
+.calc-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--acc1), var(--acc2));
+  outline: none;
+  cursor: pointer;
+}
+.calc-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--acc1);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+}
+.calc-slider::-moz-range-thumb {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--acc1);
+  cursor: pointer;
+}
+.calc-range {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 0.68rem;
+  color: var(--txt3); margin-top: 6px;
+}
+.calc-result {
+  background: rgba(59,130,246,0.05);
+  border: 1px solid rgba(59,130,246,0.15);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+.calc-result-row {
+  display: flex; justify-content: space-between;
+  font-size: 0.9rem; color: var(--txt2);
+  padding: 6px 0;
+}
+.calc-result-row.sub { font-size: 0.8rem; color: var(--txt3); }
+.calc-result-row.total {
+  font-size: 1.1rem; font-weight: 700; color: var(--txt);
+  padding-top: 12px;
+}
+.calc-price { color: var(--acc2); font-weight: 600; font-family: var(--mono); }
+.calc-total {
+  font-family: var(--display); font-size: 1.3rem;
+  background: linear-gradient(135deg, var(--acc1), var(--acc2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.calc-divider { height: 1px; background: var(--border); margin: 8px 0; }
+.calc-cta { width: 100%; justify-content: center; }
+
+/* Presets */
+.presets { display: flex; flex-direction: column; gap: 16px; }
+.preset-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  cursor: pointer;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.preset-card:hover { border-color: var(--border-h); transform: translateX(4px); }
+.preset-name {
+  font-family: var(--display);
+  font-size: 0.9rem; font-weight: 700;
+  color: var(--txt); margin-bottom: 4px;
+}
+.preset-config { font-size: 0.78rem; color: var(--txt3); margin-bottom: 8px; }
+.preset-price {
+  font-family: var(--mono); font-size: 1.1rem;
+  color: var(--acc2); font-weight: 700;
+}
+.bonus-card {
+  background: linear-gradient(135deg, rgba(29,78,216,0.12), rgba(14,165,233,0.08));
+  border: 1px solid rgba(59,130,246,0.25);
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+.bonus-title {
+  font-family: var(--display);
+  font-size: 0.82rem; font-weight: 700;
+  color: var(--txt); margin-bottom: 12px;
+}
+.bonus-row {
+  display: flex; justify-content: space-between;
+  font-size: 0.85rem; color: var(--txt2);
+  padding: 4px 0;
+}
+.bonus-val { color: #34D399; font-weight: 700; font-family: var(--mono); }
+
+/* ── STACK ────────────────────────────────────────────────────────────────── */
+.stack-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 80px;
+}
+.stack-item {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 22px;
+  display: flex; flex-direction: column; gap: 4px;
+  transition: border-color 0.3s;
+}
+.stack-item:hover { border-color: var(--border-h); }
+.stack-name {
+  font-family: var(--mono); font-size: 0.82rem;
+  color: var(--txt); font-weight: 600;
+}
+.stack-role {
+  font-size: 0.7rem; color: var(--txt3);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+
+/* Roadmap */
+.roadmap-head { margin-bottom: 48px; margin-top: 20px; }
+.roadmap-split {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 32px;
+  align-items: start;
+}
+.roadmap-col-label {
+  font-family: var(--display);
+  font-size: 0.85rem; font-weight: 700;
+  color: var(--txt); margin-bottom: 20px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: inline-block;
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.2);
+}
+.roadmap-col-label.now {
+  background: rgba(52,211,153,0.1);
+  border-color: rgba(52,211,153,0.3);
+  color: #34D399;
+}
+.roadmap-now-list {
+  list-style: none; padding: 0;
+}
+.roadmap-now-list li {
+  font-size: 0.85rem; color: var(--txt2);
+  line-height: 1.5;
+  padding: 10px 0 10px 24px;
+  position: relative;
+  border-bottom: 1px solid rgba(59,130,246,0.06);
+}
+.roadmap-now-list li::before {
+  content: '\2713';
+  position: absolute; left: 0; top: 10px;
+  color: #34D399; font-weight: 700; font-size: 0.85rem;
+}
+.roadmap-future-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.roadmap-future-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.roadmap-future-card:hover { border-color: var(--border-h); transform: translateY(-3px); }
+.rf-title {
+  font-family: var(--display);
+  font-size: 0.88rem; font-weight: 700;
+  color: var(--acc2); margin-bottom: 8px;
+}
+.rf-desc { font-size: 0.82rem; color: var(--txt2); line-height: 1.6; }
 
 /* ── CTA SECTION ─────────────────────────────────────────────────────────── */
 .cta-section {
-  padding: 80px 0 0;
-  border-top: 1px solid rgba(59,130,246,0.1);
+  padding: 100px 0 60px;
+  border-top: 1px solid rgba(59,130,246,0.08);
 }
 .cta-inner {
-  background: linear-gradient(135deg, rgba(29,78,216,0.12) 0%, rgba(14,165,233,0.08) 100%);
-  border: 1px solid rgba(59,130,246,0.2);
-  border-radius: 20px;
-  padding: 60px 52px;
+  background: linear-gradient(135deg, rgba(29,78,216,0.15) 0%, rgba(14,165,233,0.1) 100%);
+  border: 1px solid rgba(59,130,246,0.25);
+  border-radius: 24px;
+  padding: 72px 52px;
   text-align: center;
 }
 .cta-title {
@@ -521,42 +1212,64 @@ function goToApp() {
   font-size: 1rem; color: var(--txt2);
   margin-bottom: 36px; line-height: 1.6;
 }
-.cta-btn {
-  display: inline-flex; align-items: center; gap: 12px;
-  background: linear-gradient(90deg, #1D4ED8 0%, #3B82F6 50%, #0EA5E9 100%);
-  color: #fff; border: none;
-  border-radius: 8px; padding: 16px 36px;
-  font-family: var(--display);
-  font-size: 0.95rem; font-weight: 700;
-  cursor: pointer;
-  transition: opacity .2s, transform .1s;
-  box-shadow: 0 4px 32px rgba(59,130,246,0.35);
+.cta-buttons { display: flex; justify-content: center; gap: 16px; }
+
+/* ── FOOTER ──────────────────────────────────────────────────────────────── */
+.footer {
+  border-top: 1px solid rgba(59,130,246,0.08);
+  padding: 40px 0;
 }
-.cta-btn:hover { opacity: 0.9; transform: translateY(-2px); }
-.btn-arrow { font-size: 1.1rem; }
+.footer-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 20px;
+}
+.footer-brand { display: flex; align-items: center; gap: 10px; }
+.footer-brand img {
+  filter: brightness(0) invert(1);
+}
+.footer-links { display: flex; gap: 24px; }
+.footer-links a {
+  font-family: var(--mono); font-size: 0.75rem;
+  color: var(--txt3); text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--acc1); }
+.footer-copy { font-size: 0.72rem; color: var(--txt3); }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   .cases-grid { grid-template-columns: repeat(2, 1fr); }
-  .steps-row { grid-template-columns: repeat(3, 1fr); row-gap: 32px; }
-  .steps-row::before { display: none; }
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .roadmap-split { grid-template-columns: 1fr; }
+  .pricing-layout { grid-template-columns: 1fr; }
 }
 @media (max-width: 1024px) {
   .hero { flex-direction: column; min-height: auto; }
   .hero-left { padding: 60px 40px; justify-content: flex-start; }
-  .hero-right { flex: none; width: 100%; min-height: 340px; }
+  .hero-right { flex: none; width: 100%; min-height: 320px; }
   .logo-img { width: 280px; height: 280px; }
   .logo-showcase { width: 280px; height: 280px; }
-  .form-grid { grid-template-columns: 1fr; }
-  .form-col:first-child { border-right: none; border-bottom: 1px solid rgba(59,130,246,0.1); }
+  .pain-grid { grid-template-columns: 1fr; }
+  .tech-grid { grid-template-columns: 1fr; }
+  .demo-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
-  .main-wrap { padding: 48px 20px 64px; }
-  .navbar { padding: 0 20px; }
+  .main-wrap { padding: 0 20px; }
+  .nav-inner { padding: 0 20px; }
+  .mobile-menu { padding: 16px 20px 20px; }
   .hero-left { padding: 48px 20px; }
-  .hero-title { font-size: 2rem; }
+  .hero-title { font-size: 1.8rem; }
   .cases-grid { grid-template-columns: 1fr; }
-  .steps-row { grid-template-columns: 1fr 1fr; }
   .hero-kpi { flex-wrap: wrap; gap: 20px; }
+  .hero-ctas { flex-direction: column; align-items: stretch; }
+  .btn-ghost { text-align: center; }
+  .section { padding: 64px 0; }
+  .cta-inner { padding: 48px 24px; }
+  .calc-card { padding: 28px 20px; }
+  .compare-table { font-size: 0.75rem; }
+  .compare-table th, .compare-table td { padding: 10px 12px; }
+  .roadmap-future-grid { grid-template-columns: 1fr; }
+  .metrics-grid { grid-template-columns: 1fr 1fr; }
+  .footer-inner { flex-direction: column; align-items: flex-start; }
 }
 </style>
