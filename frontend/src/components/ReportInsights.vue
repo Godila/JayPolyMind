@@ -56,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import {
   Chart,
   LineController, BarController, DoughnutController,
@@ -74,7 +74,8 @@ Chart.register(
 
 const props = defineProps({
   reportId: { type: String, required: true },
-  simulationId: { type: String, required: true }
+  simulationId: { type: String, required: true },
+  reportComplete: { type: Boolean, default: false }
 })
 
 const loading = ref(true)
@@ -243,23 +244,28 @@ const buildActivityChart = (agentData) => {
   chartInstances.push(c4)
 }
 
+const loadData = async () => {
+  const [metricsRes, analyticsRes] = await Promise.allSettled([
+    getReportMetrics(props.reportId),
+    getSimulationAnalytics(props.simulationId)
+  ])
+
+  const metrics = metricsRes.status === 'fulfilled' && metricsRes.value?.success
+    ? metricsRes.value.data : null
+  const agentActions = analyticsRes.status === 'fulfilled' && analyticsRes.value?.success
+    ? analyticsRes.value.data?.agent_actions : null
+
+  return { metrics, agentActions }
+}
+
+const destroyCharts = () => {
+  chartInstances.forEach(c => c.destroy())
+  chartInstances.length = 0
+}
+
 onMounted(async () => {
   try {
-    const [metricsRes, analyticsRes] = await Promise.allSettled([
-      getReportMetrics(props.reportId),
-      getSimulationAnalytics(props.simulationId)
-    ])
-
-    // Debug: log raw results to console
-    console.log('[ReportInsights] reportId:', props.reportId)
-    console.log('[ReportInsights] metricsRes:', metricsRes.status, metricsRes.status === 'rejected' ? metricsRes.reason?.message : metricsRes.value)
-    console.log('[ReportInsights] analyticsRes:', analyticsRes.status)
-
-    const metrics = metricsRes.status === 'fulfilled' && metricsRes.value?.success
-      ? metricsRes.value.data : null
-    const agentActions = analyticsRes.status === 'fulfilled' && analyticsRes.value?.success
-      ? analyticsRes.value.data?.agent_actions : null
-
+    const { metrics, agentActions } = await loadData()
     if (metrics) {
       metricsData.value = metrics
       loading.value = false
@@ -275,14 +281,29 @@ onMounted(async () => {
       loading.value = false
     }
   } catch (e) {
-    console.error('[ReportInsights] catch:', e)
     error.value = true
     loading.value = false
   }
 })
 
+watch(() => props.reportComplete, async (complete) => {
+  if (!complete || metricsData.value) return
+  try {
+    const { metrics, agentActions } = await loadData()
+    if (!metrics) return
+    destroyCharts()
+    metricsData.value = metrics
+    fallbackOnly.value = false
+    error.value = false
+    await nextTick()
+    buildMetricsCharts(metrics, agentActions)
+  } catch (e) {
+    // silent — fallback already shown
+  }
+})
+
 onUnmounted(() => {
-  chartInstances.forEach(c => c.destroy())
+  destroyCharts()
 })
 </script>
 
