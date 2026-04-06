@@ -92,14 +92,14 @@ async function onSubmit({ files, requirement }) {
 
 /* ── Tokens ──────────────────────────────────────────────────────────────── */
 :root {
-  --bg:       #060814;
-  --bg2:      #0A0F1E;
+  --bg:       #f4f5f7;
+  --bg2:      #eef0f4;
   --acc1:     #3B82F6;
   --acc2:     #38BDF8;
-  --txt:      #EFF6FF;
-  --txt2:     #7FA4C4;
-  --txt3:     #3A5570;
-  --border:   rgba(59,130,246,0.15);
+  --txt:      #111827;
+  --txt2:     #6B7280;
+  --txt3:     #9CA3AF;
+  --border:   rgba(0,0,0,0.08);
   --mono:     'JetBrains Mono', monospace;
   --display:  'Unbounded', sans-serif;
   --body:     'Onest', sans-serif;
@@ -119,15 +119,15 @@ async function onSubmit({ files, requirement }) {
 .bg-ambient { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 .orb {
   position: absolute; border-radius: 50%;
-  filter: blur(130px); opacity: 0.10;
+  filter: blur(160px); opacity: 0.06;
 }
-.orb-1 { width: 800px; height: 800px; background: #3B82F6; top: -300px; left: -200px; }
-.orb-2 { width: 600px; height: 600px; background: #0EA5E9; bottom: -100px; right: -150px; }
+.orb-1 { width: 900px; height: 900px; background: #3B82F6; top: -400px; left: -300px; }
+.orb-2 { width: 700px; height: 700px; background: #0EA5E9; bottom: -200px; right: -200px; }
 .grid-overlay {
   position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+    linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
   background-size: 64px 64px;
 }
 
