@@ -109,8 +109,8 @@ async function onSubmit({ files, requirement }) {
 
 .app-root {
   min-height: 100vh;
-  background: var(--bg);
-  color: var(--txt);
+  background: #f4f5f7;
+  color: #111827;
   font-family: var(--body);
   overflow-x: hidden;
 }
