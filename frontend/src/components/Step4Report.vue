@@ -435,14 +435,14 @@ const exportPDF = async () => {
   const el = leftPanel.value
   const savedStyle = el.getAttribute('style') || ''
   // Temporarily make element full-width so PDF fills A4 page
-  el.style.cssText = 'width: 800px !important; max-width: 800px !important; overflow: visible !important;'
+  el.style.cssText = 'width: 1100px !important; max-width: 1100px !important; overflow: visible !important; position: relative !important;'
 
   try {
     await html2pdf().set({
-      margin: [10, 12],
+      margin: [12, 14],
       filename: `report-${props.reportId || 'simulation'}.pdf`,
       image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0 },
+      html2canvas: { scale: 1.5, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 1100 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(el).save()
   } finally {

@@ -3062,46 +3062,69 @@ def delete_custom_agent(simulation_id: str, agent_id: int):
 def get_simulation_analytics(simulation_id: str):
     """
     Aggregated simulation analytics for charts.
-    Reads from JSONL action files via get_timeline() — works after reload.
+    Reads from JSONL action files via get_all_actions() — works after reload.
     """
     try:
         run_state = SimulationRunner.get_run_state(simulation_id)
         if not run_state:
             return jsonify({"success": False, "error": "Simulation not found"}), 404
 
-        # get_timeline reads from JSONL files, works after process restart
-        timeline = SimulationRunner.get_timeline(simulation_id)
+        # get_all_actions reads directly from JSONL files — works after restart
+        all_actions = SimulationRunner.get_all_actions(simulation_id)
 
-        # Build per-round data and aggregate action_types from timeline
-        rounds = []
+        rounds_map: dict = {}
         action_types: dict = {}
+        agent_map: dict = {}
         twitter_total = 0
         reddit_total = 0
 
-        for r in timeline:
-            tw = r.get("twitter_actions", 0)
-            rd = r.get("reddit_actions", 0)
-            rounds.append({
-                "round_num": r.get("round_num", 0),
-                "twitter_actions": tw,
-                "reddit_actions": rd,
-                "actions_count": r.get("total_actions", tw + rd)
-            })
-            twitter_total += tw
-            reddit_total += rd
-            for atype, cnt in r.get("action_types", {}).items():
-                action_types[atype] = action_types.get(atype, 0) + cnt
+        for a in all_actions:
+            rn = a.round_num
+            platform = a.platform or ""
+            atype = a.action_type or "UNKNOWN"
+            name = a.agent_name or f"Agent {a.agent_id}"
 
-        # Fall back to run_state counters if timeline is empty
+            # Per-round aggregation
+            if rn not in rounds_map:
+                rounds_map[rn] = {"round_num": rn, "twitter_actions": 0, "reddit_actions": 0, "actions_count": 0}
+            if platform == "twitter":
+                rounds_map[rn]["twitter_actions"] += 1
+                twitter_total += 1
+            else:
+                rounds_map[rn]["reddit_actions"] += 1
+                reddit_total += 1
+            rounds_map[rn]["actions_count"] += 1
+
+            # Global action type aggregation
+            action_types[atype] = action_types.get(atype, 0) + 1
+
+            # Per-agent aggregation
+            if name not in agent_map:
+                agent_map[name] = {"total": 0, "twitter": 0, "reddit": 0, "types": {}}
+            agent_map[name]["total"] += 1
+            if platform == "twitter":
+                agent_map[name]["twitter"] += 1
+            else:
+                agent_map[name]["reddit"] += 1
+            agent_map[name]["types"][atype] = agent_map[name]["types"].get(atype, 0) + 1
+
+        rounds = sorted(rounds_map.values(), key=lambda r: r["round_num"])
+
+        # Fallback to run_state counters if no JSONL data
         if not rounds:
             twitter_total = run_state.twitter_actions_count or 0
             reddit_total = run_state.reddit_actions_count or 0
 
         completed_rounds = max(len(rounds), 1)
 
+        # Top-10 agents sorted by total activity
+        top_agents = sorted(agent_map.items(), key=lambda x: x[1]["total"], reverse=True)[:10]
+        agent_actions = {name: data for name, data in top_agents}
+
         analytics = {
             "rounds": rounds,
             "action_types": action_types,
+            "agent_actions": agent_actions,
             "platform_totals": {
                 "twitter": twitter_total,
                 "reddit": reddit_total

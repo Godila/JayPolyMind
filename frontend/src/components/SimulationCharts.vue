@@ -15,9 +15,9 @@
     </div>
 
     <div v-else-if="analyticsData" class="charts-grid">
-      <!-- Chart 1: Activity by round -->
+      <!-- Chart 1: Agent activity stacked by platform -->
       <div class="chart-card">
-        <div class="chart-label">Динамика активности по раундам</div>
+        <div class="chart-label">Активность агентов по платформам</div>
         <canvas ref="activityChart"></canvas>
       </div>
 
@@ -27,15 +27,15 @@
         <canvas ref="typesChart"></canvas>
       </div>
 
-      <!-- Chart 3: Platform comparison bar -->
+      <!-- Chart 3: Activity per round -->
       <div class="chart-card">
-        <div class="chart-label">Сравнение платформ</div>
+        <div class="chart-label">Активность по раундам</div>
         <canvas ref="platformChart"></canvas>
       </div>
 
-      <!-- Chart 4: Stacked intensity per round -->
+      <!-- Chart 4: Per-agent action type breakdown -->
       <div class="chart-card">
-        <div class="chart-label">Интенсивность по раундам</div>
+        <div class="chart-label">Состав действий по агентам</div>
         <canvas ref="intensityChart"></canvas>
       </div>
     </div>
@@ -73,79 +73,73 @@ const intensityChart = ref(null)
 
 const chartInstances = []
 
-const ACTION_COLORS = {
-  CREATE_POST:    '#1a1a1a',
-  LIKE_POST:      '#6366f1',
-  REPOST:         '#0ea5e9',
-  FOLLOW:         '#10b981',
-  DO_NOTHING:     '#d1d5db',
-  QUOTE_POST:     '#f59e0b',
-  CREATE_COMMENT: '#8b5cf6',
-  DISLIKE_POST:   '#ef4444',
-  SEARCH_POSTS:   '#64748b',
-  UPVOTE_POST:    '#22c55e',
-  DOWNVOTE_POST:  '#f97316',
-  MUTE_USER:      '#94a3b8',
-  REFRESH_FEED:   '#a78bfa',
-  TREND_TOPICS:   '#2dd4bf',
+const ACTION_LABELS = {
+  CREATE_POST: 'Публикация',
+  LIKE_POST: 'Лайк',
+  REPOST: 'Репост',
+  FOLLOW: 'Подписка',
+  DO_NOTHING: 'Пропуск',
+  QUOTE_POST: 'Цитата',
+  CREATE_COMMENT: 'Комментарий',
+  DISLIKE_POST: 'Дизлайк',
+  SEARCH_POSTS: 'Поиск',
+  UPVOTE_POST: 'Голос+',
+  DOWNVOTE_POST: 'Голос-',
+  MUTE_USER: 'Мут',
+  REFRESH_FEED: 'Обновление',
+  TREND_TOPICS: 'Тренды',
 }
-
-const getColor = (key) => ACTION_COLORS[key] || '#9ca3af'
 
 const buildCharts = (data) => {
   const rounds = data.rounds || []
-  const labels = rounds.map(r => `R${r.round_num}`)
+  const roundLabels = rounds.map(r => `Р${r.round_num + 1}`)
+  const agents = data.agent_actions || {}
+  const agentNames = Object.keys(agents)
+  const PALETTE = ['#1a1a1a','#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#2dd4bf','#f97316','#64748b']
 
-  // Chart 1 — Area: twitter + reddit activity per round
+  // Chart 1 — Horizontal bar: top agents by total activity
   const c1 = new Chart(activityChart.value, {
-    type: 'line',
+    type: 'bar',
     data: {
-      labels,
+      labels: agentNames.length ? agentNames : ['Нет данных'],
       datasets: [
         {
           label: 'Новостная лента',
-          data: rounds.map(r => r.twitter_actions),
-          borderColor: '#1a1a1a',
-          backgroundColor: 'rgba(26,26,26,0.08)',
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          borderWidth: 2
+          data: agentNames.map(n => agents[n].twitter || 0),
+          backgroundColor: 'rgba(26,26,26,0.8)',
+          borderRadius: 3
         },
         {
           label: 'Сообщество',
-          data: rounds.map(r => r.reddit_actions),
-          borderColor: '#6366f1',
-          backgroundColor: 'rgba(99,102,241,0.08)',
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          borderWidth: 2
+          data: agentNames.map(n => agents[n].reddit || 0),
+          backgroundColor: 'rgba(99,102,241,0.75)',
+          borderRadius: 3
         }
       ]
     },
     options: {
+      indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: true,
-      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } },
       scales: {
-        x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 10 } } },
-        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 10 } }, beginAtZero: true }
+        x: { stacked: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 9 } }, beginAtZero: true },
+        y: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 } } }
       }
     }
   })
   chartInstances.push(c1)
 
-  // Chart 2 — Donut: action types
+  // Chart 2 — Donut: action type distribution
   const types = data.action_types || {}
   const typeKeys = Object.keys(types).filter(k => types[k] > 0)
   const c2 = new Chart(typesChart.value, {
     type: 'doughnut',
     data: {
-      labels: typeKeys,
+      labels: typeKeys.map(k => ACTION_LABELS[k] || k),
       datasets: [{
         data: typeKeys.map(k => types[k]),
-        backgroundColor: typeKeys.map(k => getColor(k)),
+        backgroundColor: typeKeys.map((_, i) => PALETTE[i % PALETTE.length]),
         borderWidth: 2,
         borderColor: '#fff'
       }]
@@ -153,7 +147,7 @@ const buildCharts = (data) => {
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      cutout: '62%',
+      cutout: '60%',
       plugins: {
         legend: { position: 'right', labels: { font: { size: 10 }, boxWidth: 10, padding: 8 } }
       }
@@ -161,67 +155,59 @@ const buildCharts = (data) => {
   })
   chartInstances.push(c2)
 
-  // Chart 3 — Grouped bar: platform totals + avg per round
-  const pt = data.platform_totals || {}
-  const avg = data.avg_actions_per_round || {}
+  // Chart 3 — Stacked bar: activity dynamics per round (twitter + reddit)
   const c3 = new Chart(platformChart.value, {
     type: 'bar',
     data: {
-      labels: ['Новостная лента', 'Сообщество'],
+      labels: roundLabels.length ? roundLabels : ['Р1'],
       datasets: [
         {
-          label: 'Всего действий',
-          data: [pt.twitter || 0, pt.reddit || 0],
-          backgroundColor: ['rgba(26,26,26,0.85)', 'rgba(99,102,241,0.85)'],
-          borderRadius: 4
+          label: 'Новостная лента',
+          data: rounds.length ? rounds.map(r => r.twitter_actions) : [data.platform_totals?.twitter || 0],
+          backgroundColor: 'rgba(26,26,26,0.8)',
+          borderRadius: 3
         },
         {
-          label: 'Среднее за раунд',
-          data: [avg.twitter || 0, avg.reddit || 0],
-          backgroundColor: ['rgba(26,26,26,0.25)', 'rgba(99,102,241,0.25)'],
-          borderRadius: 4
+          label: 'Сообщество',
+          data: rounds.length ? rounds.map(r => r.reddit_actions) : [data.platform_totals?.reddit || 0],
+          backgroundColor: 'rgba(99,102,241,0.75)',
+          borderRadius: 3
         }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } },
       scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 10 } }, beginAtZero: true }
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { stacked: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 9 } }, beginAtZero: true }
       }
     }
   })
   chartInstances.push(c3)
 
-  // Chart 4 — Stacked bar: total actions per round (twitter + reddit stacked)
+  // Chart 4 — Grouped bar: per-agent action type breakdown (top-5 agents)
+  const top5 = agentNames.slice(0, 5)
+  const allTypes = [...new Set(top5.flatMap(n => Object.keys(agents[n]?.types || {})))]
   const c4 = new Chart(intensityChart.value, {
     type: 'bar',
     data: {
-      labels,
-      datasets: [
-        {
-          label: 'Новостная лента',
-          data: rounds.map(r => r.twitter_actions),
-          backgroundColor: 'rgba(26,26,26,0.8)',
-          borderRadius: 2
-        },
-        {
-          label: 'Сообщество',
-          data: rounds.map(r => r.reddit_actions),
-          backgroundColor: 'rgba(99,102,241,0.7)',
-          borderRadius: 2
-        }
-      ]
+      labels: top5.length ? top5 : ['Нет данных'],
+      datasets: allTypes.map((t, i) => ({
+        label: ACTION_LABELS[t] || t,
+        data: top5.map(n => agents[n]?.types?.[t] || 0),
+        backgroundColor: PALETTE[i % PALETTE.length],
+        borderRadius: 2
+      }))
     },
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } },
       scales: {
-        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
-        y: { stacked: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 10 } }, beginAtZero: true }
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 } } },
+        y: { stacked: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 9 } }, beginAtZero: true }
       }
     }
   })
