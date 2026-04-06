@@ -575,7 +575,9 @@ onUnmounted(() => {
   width: 100%;
   min-height: 280px;
   margin-top: 40px;
-  padding: 35px 0 40px;
+  padding: 35px 40px 40px;
+  background: #ffffff;
+  border-radius: 16px 16px 0 0;
   overflow: visible;
 }
 
