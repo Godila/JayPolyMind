@@ -17,7 +17,7 @@
           </div>
 
           <!-- Report insights charts -->
-          <ReportInsights v-if="reportId && simulationId" :report-id="reportId" :simulation-id="simulationId" :report-complete="isComplete" />
+          <ReportInsights v-if="reportId && simulationId && isComplete" :report-id="reportId" :simulation-id="simulationId" />
 
           <!-- Sections List -->
           <div class="sections-list">

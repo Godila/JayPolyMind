@@ -56,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import {
   Chart,
   LineController, BarController, DoughnutController,
@@ -74,8 +74,7 @@ Chart.register(
 
 const props = defineProps({
   reportId: { type: String, required: true },
-  simulationId: { type: String, required: true },
-  reportComplete: { type: Boolean, default: false }
+  simulationId: { type: String, required: true }
 })
 
 const loading = ref(true)
@@ -286,21 +285,6 @@ onMounted(async () => {
   }
 })
 
-watch(() => props.reportComplete, async (complete) => {
-  if (!complete || metricsData.value) return
-  try {
-    const { metrics, agentActions } = await loadData()
-    if (!metrics) return
-    destroyCharts()
-    metricsData.value = metrics
-    fallbackOnly.value = false
-    error.value = false
-    await nextTick()
-    buildMetricsCharts(metrics, agentActions)
-  } catch (e) {
-    // silent — fallback already shown
-  }
-})
 
 onUnmounted(() => {
   destroyCharts()
