@@ -15,24 +15,7 @@
           <img src="/logo.png" height="36" class="nav-logo" alt="JayPolyMind">
           <span class="brand-name">Jay<span class="brand-poly">Poly</span>Mind</span>
         </div>
-        <div class="nav-links">
-          <a href="#how-it-works" class="nav-link" @click.prevent="scrollTo('how-it-works')">Как работает</a>
-          <a href="#technology" class="nav-link" @click.prevent="scrollTo('technology')">Технология</a>
-          <a href="#pricing" class="nav-link" @click.prevent="scrollTo('pricing')">Цены</a>
-        </div>
-        <div class="nav-right">
-          <button class="nav-login-btn" @click="goToApp">Войти &rarr;</button>
-        </div>
-        <button class="nav-burger" @click="mobileMenu = !mobileMenu" aria-label="Menu">
-          <span></span><span></span><span></span>
-        </button>
-      </div>
-      <!-- Mobile menu -->
-      <div v-if="mobileMenu" class="mobile-menu">
-        <a href="#how-it-works" @click.prevent="scrollTo('how-it-works'); mobileMenu = false">Как работает</a>
-        <a href="#technology" @click.prevent="scrollTo('technology'); mobileMenu = false">Технология</a>
-        <a href="#pricing" @click.prevent="scrollTo('pricing'); mobileMenu = false">Цены</a>
-        <button class="nav-login-btn mobile" @click="goToApp">Войти &rarr;</button>
+        <button class="nav-login-btn" @click="goToApp">Войти &rarr;</button>
       </div>
     </nav>
 
@@ -287,14 +270,23 @@
 
         <div class="roadmap-head">
           <span class="section-eyebrow">Roadmap</span>
-          <h2 class="section-title">Что дальше</h2>
+          <h2 class="section-title">Сейчас и дальше</h2>
         </div>
-        <div class="roadmap-grid">
-          <div v-for="(r, i) in roadmap" :key="i" class="roadmap-card">
-            <div class="roadmap-period">{{ r.period }}</div>
-            <ul class="roadmap-list">
-              <li v-for="(item, j) in r.items" :key="j">{{ item }}</li>
+        <div class="roadmap-split">
+          <div class="roadmap-col">
+            <div class="roadmap-col-label now">Реализовано</div>
+            <ul class="roadmap-now-list">
+              <li v-for="(item, j) in roadmapNow" :key="j">{{ item }}</li>
             </ul>
+          </div>
+          <div class="roadmap-col future">
+            <div class="roadmap-col-label">В разработке</div>
+            <div class="roadmap-future-grid">
+              <div v-for="(r, i) in roadmapFuture" :key="i" class="roadmap-future-card">
+                <h4 class="rf-title">{{ r.title }}</h4>
+                <p class="rf-desc">{{ r.desc }}</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -341,7 +333,6 @@ import { isAuthenticated } from '../store/auth.js'
 // ── Navigation ─────────────────────────────────────────────────────────────
 const router = useRouter()
 const navScrolled = ref(false)
-const mobileMenu = ref(false)
 
 function goToApp() {
   router.push(isAuthenticated() ? { name: 'App' } : { name: 'Login' })
@@ -467,11 +458,22 @@ const stack = [
   { name: 'Docker', role: 'Deploy' },
 ]
 
-const roadmap = [
-  { period: 'Сейчас', items: ['MVP + демо-кейсы', 'Лендинг-презентация', 'Pay-as-you-go биллинг'] },
-  { period: 'Q3 2026', items: ['Multi-language (RU/EN)', 'A/B симуляции', 'Slack-интеграция'] },
-  { period: 'Q4 2026', items: ['REST API для партнёров', 'Отраслевые шаблоны агентов', 'Расширенная аналитика'] },
-  { period: '2027', items: ['On-premise (Ollama)', 'Плагин Google Docs / Notion', 'Предиктивная модель'] },
+const roadmapNow = [
+  'Мультиагентная симуляция (50-100+ агентов)',
+  'Граф знаний на базе Neo4j',
+  'Генерация аналитических отчётов',
+  'Интервью и диалог с агентами',
+  'Демо-кейсы и сценарии',
+]
+
+const roadmapFuture = [
+  { title: 'Pay-as-you-go биллинг', desc: 'Оплата за фактическое потребление токенов. Пополняете баланс -- платите только за использованные симуляции' },
+  { title: 'Deep Research', desc: 'Автоматическое обогащение документа: парсинг открытых источников, новостей, соцсетей для построения расширенного контекста перед симуляцией' },
+  { title: 'A/B симуляции', desc: 'Загрузите два варианта документа и сравните реакции аудитории side-by-side. Выберите стратегию на основе данных' },
+  { title: 'Отраслевые шаблоны агентов', desc: 'Готовые наборы персон для финтеха, фармы, ритейла, госсектора -- с отраслевой экспертизой и терминологией' },
+  { title: 'On-premise развёртывание', desc: 'Полностью локальная установка с Ollama LLM. Данные не покидают периметр компании. Для банков, госструктур и defence' },
+  { title: 'Детализированная аналитика сентимента', desc: 'Эволюция настроений по раундам, heatmap реакций по сегментам, выявление точек перелома мнений' },
+  { title: 'Поведенческие паттерны и кластеризация', desc: 'Автоматическое выделение групп агентов со схожим поведением, анализ лидеров мнений и цепочек влияния' },
 ]
 </script>
 
@@ -536,16 +538,18 @@ const roadmap = [
 /* ── Navbar ──────────────────────────────────────────────────────────────── */
 .navbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid #EAEAEA;
-  transition: box-shadow 0.3s;
+  background: #F8FAFF;
+  border-bottom: none;
+  transition: background 0.3s, box-shadow 0.3s;
 }
 .navbar.scrolled {
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(12px);
   box-shadow: 0 2px 20px rgba(0,0,0,0.08);
 }
 .nav-inner {
-  max-width: 1400px; margin: 0 auto;
+  width: 100%;
+  max-width: 1360px; margin: 0 auto;
   height: 68px;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 52px;
@@ -559,15 +563,6 @@ const roadmap = [
 }
 .brand-name.sm { font-size: 0.9rem; color: #EFF6FF; }
 .brand-poly { color: #38BDF8; }
-.nav-links { display: flex; gap: 36px; margin-left: 64px; flex-shrink: 0; }
-.nav-link {
-  font-family: var(--mono);
-  font-size: 0.78rem; color: #64748B;
-  text-decoration: none; font-weight: 500;
-  transition: color 0.2s;
-}
-.nav-link:hover { color: #1D4ED8; }
-.nav-right { display: flex; align-items: center; gap: 20px; }
 .nav-login-btn {
   font-family: var(--mono); font-size: 0.8rem;
   color: #1D4ED8; background: rgba(29,78,216,0.06);
@@ -576,18 +571,6 @@ const roadmap = [
   transition: all .2s; font-weight: 600;
 }
 .nav-login-btn:hover { background: rgba(29,78,216,0.12); border-color: #1D4ED8; }
-.nav-burger { display: none; background: none; border: none; cursor: pointer; padding: 4px; flex-direction: column; gap: 5px; }
-.nav-burger span { display: block; width: 22px; height: 2px; background: #111; border-radius: 1px; }
-.mobile-menu {
-  display: none;
-  flex-direction: column; gap: 16px;
-  padding: 20px 52px 24px;
-  border-top: 1px solid #EAEAEA;
-}
-.mobile-menu a {
-  font-family: var(--mono); font-size: 0.85rem;
-  color: #374151; text-decoration: none; font-weight: 500;
-}
 
 /* ── HERO ────────────────────────────────────────────────────────────────── */
 .hero {
@@ -1151,40 +1134,61 @@ const roadmap = [
 
 /* Roadmap */
 .roadmap-head { margin-bottom: 48px; margin-top: 20px; }
-.roadmap-grid {
+.roadmap-split {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: 1fr 2fr;
+  gap: 32px;
+  align-items: start;
 }
-.roadmap-card {
+.roadmap-col-label {
+  font-family: var(--display);
+  font-size: 0.85rem; font-weight: 700;
+  color: var(--txt); margin-bottom: 20px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: inline-block;
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.2);
+}
+.roadmap-col-label.now {
+  background: rgba(52,211,153,0.1);
+  border-color: rgba(52,211,153,0.3);
+  color: #34D399;
+}
+.roadmap-now-list {
+  list-style: none; padding: 0;
+}
+.roadmap-now-list li {
+  font-size: 0.85rem; color: var(--txt2);
+  line-height: 1.5;
+  padding: 10px 0 10px 24px;
+  position: relative;
+  border-bottom: 1px solid rgba(59,130,246,0.06);
+}
+.roadmap-now-list li::before {
+  content: '\2713';
+  position: absolute; left: 0; top: 10px;
+  color: #34D399; font-weight: 700; font-size: 0.85rem;
+}
+.roadmap-future-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.roadmap-future-card {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 24px;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, transform 0.2s;
 }
-.roadmap-card:hover { border-color: var(--border-h); }
-.roadmap-period {
+.roadmap-future-card:hover { border-color: var(--border-h); transform: translateY(-3px); }
+.rf-title {
   font-family: var(--display);
   font-size: 0.88rem; font-weight: 700;
-  color: var(--acc2); margin-bottom: 16px;
+  color: var(--acc2); margin-bottom: 8px;
 }
-.roadmap-list {
-  list-style: none; padding: 0;
-}
-.roadmap-list li {
-  font-size: 0.82rem; color: var(--txt2);
-  line-height: 1.5;
-  padding: 6px 0 6px 16px;
-  position: relative;
-}
-.roadmap-list li::before {
-  content: '';
-  position: absolute; left: 0; top: 13px;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--acc1);
-}
+.rf-desc { font-size: 0.82rem; color: var(--txt2); line-height: 1.6; }
 
 /* ── CTA SECTION ─────────────────────────────────────────────────────────── */
 .cta-section {
@@ -1236,7 +1240,7 @@ const roadmap = [
 @media (max-width: 1200px) {
   .cases-grid { grid-template-columns: repeat(2, 1fr); }
   .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-  .roadmap-grid { grid-template-columns: repeat(2, 1fr); }
+  .roadmap-split { grid-template-columns: 1fr; }
   .pricing-layout { grid-template-columns: 1fr; }
 }
 @media (max-width: 1024px) {
@@ -1248,9 +1252,6 @@ const roadmap = [
   .pain-grid { grid-template-columns: 1fr; }
   .tech-grid { grid-template-columns: 1fr; }
   .demo-grid { grid-template-columns: 1fr; }
-  .nav-links { display: none; }
-  .nav-burger { display: flex; }
-  .mobile-menu { display: flex; }
 }
 @media (max-width: 640px) {
   .main-wrap { padding: 0 20px; }
@@ -1267,7 +1268,7 @@ const roadmap = [
   .calc-card { padding: 28px 20px; }
   .compare-table { font-size: 0.75rem; }
   .compare-table th, .compare-table td { padding: 10px 12px; }
-  .roadmap-grid { grid-template-columns: 1fr; }
+  .roadmap-future-grid { grid-template-columns: 1fr; }
   .metrics-grid { grid-template-columns: 1fr 1fr; }
   .footer-inner { flex-direction: column; align-items: flex-start; }
 }
