@@ -430,58 +430,67 @@ const isExportingPDF = ref(false)
 const exportPDF = async () => {
   if (!leftPanel.value || isExportingPDF.value) return
   isExportingPDF.value = true
+
+  // A4 portrait content width: 210mm - 20mm margins = 190mm ≈ 718px at 96dpi
+  const PDF_WIDTH = 718
+  let container = null
+
   try {
     const { default: html2pdf } = await import('html2pdf.js')
 
-    // A4 content width: 210mm - 20mm margins = 190mm ≈ 718px at 96dpi
-    const PDF_WIDTH_PX = 718
+    // Step 1: Capture chart canvas data BEFORE cloning (canvases lose content on clone)
+    const canvasDataURLs = []
+    leftPanel.value.querySelectorAll('canvas').forEach(c => {
+      canvasDataURLs.push(c.toDataURL('image/png'))
+    })
 
+    // Step 2: Clone element into an off-screen real DOM container
+    container = document.createElement('div')
+    container.style.cssText = `position:fixed;top:-9999px;left:0;width:${PDF_WIDTH}px;background:#fff;z-index:-1`
+    document.body.appendChild(container)
+
+    const clone = leftPanel.value.cloneNode(true)
+    container.appendChild(clone)
+
+    // Step 3: Apply print styles to clone
+    clone.style.cssText = `width:${PDF_WIDTH}px!important;max-width:${PDF_WIDTH}px!important;` +
+      'overflow:visible!important;background:#fff!important;' +
+      'padding:28px 32px 48px!important;position:static!important;' +
+      'box-shadow:none!important;border:none!important;flex:none!important'
+
+    clone.querySelectorAll('.report-content-wrapper,.insights-section').forEach(n => {
+      n.style.cssText += ';max-width:none!important;width:100%!important'
+    })
+    clone.querySelectorAll('.completion-actions,.header-actions,.pdf-btn,.go-interaction-btn').forEach(n => {
+      n.style.display = 'none'
+    })
+    const grid = clone.querySelector('.charts-grid')
+    if (grid) { grid.style.display = 'grid'; grid.style.gridTemplateColumns = '1fr 1fr' }
+
+    // Step 4: Replace blank canvases in clone with captured images
+    clone.querySelectorAll('canvas').forEach((canvas, i) => {
+      if (!canvasDataURLs[i]) return
+      const img = document.createElement('img')
+      img.src = canvasDataURLs[i]
+      img.style.cssText = 'width:100%;height:auto;display:block'
+      canvas.parentNode.replaceChild(img, canvas)
+    })
+
+    // Step 5: Wait for layout to settle
+    await nextTick()
+    await new Promise(r => setTimeout(r, 150))
+
+    // Step 6: Capture and export
     await html2pdf().set({
       margin: [10, 10, 10, 10],
       filename: `report-${props.reportId || 'simulation'}.pdf`,
-      image: { type: 'jpeg', quality: 0.92 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: PDF_WIDTH_PX,
-        onclone: (doc, el) => {
-          // 1. Isolate: el as sole child of body — no parent flex/overflow
-          const body = doc.body
-          body.innerHTML = ''
-          body.style.cssText = 'margin:0;padding:0;background:#fff'
-          body.appendChild(el)
-
-          // 2. Exact A4 content width
-          el.style.cssText = `width:${PDF_WIDTH_PX}px!important;max-width:${PDF_WIDTH_PX}px!important;` +
-            'overflow:visible!important;background:#fff!important;' +
-            'padding:28px 32px 48px!important;position:static!important;' +
-            'box-shadow:none!important;border:none!important;flex:none!important'
-
-          // 3. Remove inner max-width constraints
-          el.querySelectorAll('.report-content-wrapper, .insights-section').forEach(n => {
-            n.style.maxWidth = 'none'
-            n.style.width = '100%'
-          })
-
-          // 4. Charts: 2-column fits A4 at this width
-          const grid = el.querySelector('.charts-grid')
-          if (grid) {
-            grid.style.display = 'grid'
-            grid.style.gridTemplateColumns = '1fr 1fr'
-          }
-
-          // 5. Fix flex rows that wrap text awkwardly in narrow containers
-          el.querySelectorAll('.completion-actions, .header-actions').forEach(n => {
-            n.style.display = 'none'
-          })
-        }
-      },
+      image: { type: 'jpeg', quality: 0.93 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(leftPanel.value).save()
+    }).from(clone).save()
+
   } finally {
+    if (container) document.body.removeChild(container)
     isExportingPDF.value = false
   }
 }
