@@ -577,7 +577,7 @@ const handleNewProject = async () => {
   try {
     loading.value = true
     currentPhase.value = 0 // Ontology generation phase
-    ontologyProgress.value = { message: 'Uploading files and analyzing documents...' }
+    ontologyProgress.value = { message: 'Загрузка файлов и анализ документов...' }
 
     // Build FormData
     const formDataObj = new FormData()

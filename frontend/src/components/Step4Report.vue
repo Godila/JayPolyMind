@@ -431,15 +431,22 @@ const isExportingPDF = ref(false)
 const exportPDF = async () => {
   if (!leftPanel.value || isExportingPDF.value) return
   isExportingPDF.value = true
+
+  const el = leftPanel.value
+  const savedStyle = el.getAttribute('style') || ''
+  // Temporarily make element full-width so PDF fills A4 page
+  el.style.cssText = 'width: 800px !important; max-width: 800px !important; overflow: visible !important;'
+
   try {
     await html2pdf().set({
-      margin: [12, 15],
+      margin: [10, 12],
       filename: `report-${props.reportId || 'simulation'}.pdf`,
       image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
+      html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(leftPanel.value).save()
+    }).from(el).save()
   } finally {
+    el.setAttribute('style', savedStyle)
     isExportingPDF.value = false
   }
 }

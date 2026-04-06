@@ -382,7 +382,7 @@
                   :key="idx" 
                   class="reasoning-item"
                 >
-                  <p class="reasoning-text">{{ reason.trim() }}</p>
+                  <p class="reasoning-text">{{ reason.trim().replace(/^Time config:\s*/i, 'Временная конфигурация: ').replace(/^Event config:\s*/i, 'Конфигурация событий: ') }}</p>
                 </div>
               </div>
             </div>

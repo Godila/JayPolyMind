@@ -91,27 +91,26 @@
       </div>
 
       <div class="action-controls">
-        <!-- Simulation controls — visible only while running -->
-        <div v-if="phase === 1" class="sim-controls">
+        <template v-if="phase === 1">
           <button
-            class="ctrl-btn pause-btn"
+            class="ctrl-icon-btn"
+            :title="isPaused ? 'Продолжить' : 'Пауза'"
             :disabled="isPausing || isStopping"
             @click="isPaused ? handleResumeSimulation() : handlePauseSimulation()"
           >
             <span v-if="isPausing" class="loading-spinner-small"></span>
             <span v-else>{{ isPaused ? '▶' : '⏸' }}</span>
-            {{ isPaused ? 'Продолжить' : 'Пауза' }}
           </button>
           <button
-            class="ctrl-btn stop-btn"
+            class="ctrl-icon-btn ctrl-stop"
+            title="Остановить"
             :disabled="isStopping || isPausing"
             @click="handleStopWithConfirm"
           >
             <span v-if="isStopping" class="loading-spinner-small"></span>
             <span v-else>⏹</span>
-            Остановить
           </button>
-        </div>
+        </template>
 
         <button
           class="action-btn primary"
@@ -1015,53 +1014,40 @@ onUnmounted(() => {
   cursor: not-allowed;
 }
 
-/* Simulation control buttons (pause/stop) */
-.sim-controls {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.ctrl-btn {
+/* Simulation control icon buttons (pause/stop) */
+.ctrl-icon-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   font-size: 12px;
-  font-weight: 600;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border: 1px solid;
-}
-
-.pause-btn {
+  transition: all 0.15s ease;
+  border: 1px solid #D1D5DB;
   background: transparent;
-  border-color: #555;
-  color: #333;
+  color: #6B7280;
+  margin-right: 4px;
 }
 
-.pause-btn:hover:not(:disabled) {
-  background: #f5f5f5;
-  border-color: #222;
-  color: #000;
+.ctrl-icon-btn:hover:not(:disabled) {
+  background: #F3F4F6;
+  border-color: #9CA3AF;
+  color: #111;
 }
 
-.stop-btn {
-  background: transparent;
-  border-color: #e53e3e;
-  color: #c53030;
+.ctrl-icon-btn.ctrl-stop {
+  border-color: #FCA5A5;
+  color: #DC2626;
 }
 
-.stop-btn:hover:not(:disabled) {
-  background: #fff5f5;
-  border-color: #c53030;
-  color: #9b2c2c;
+.ctrl-icon-btn.ctrl-stop:hover:not(:disabled) {
+  background: #FEF2F2;
+  border-color: #DC2626;
 }
 
-.ctrl-btn:disabled {
+.ctrl-icon-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }

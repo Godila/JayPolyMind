@@ -3062,38 +3062,42 @@ def delete_custom_agent(simulation_id: str, agent_id: int):
 def get_simulation_analytics(simulation_id: str):
     """
     Aggregated simulation analytics for charts.
-    Returns per-round activity, action type distribution,
-    platform totals, and avg actions per round.
+    Reads from JSONL action files via get_timeline() — works after reload.
     """
     try:
         run_state = SimulationRunner.get_run_state(simulation_id)
         if not run_state:
             return jsonify({"success": False, "error": "Simulation not found"}), 404
 
-        # Per-round data
+        # get_timeline reads from JSONL files, works after process restart
+        timeline = SimulationRunner.get_timeline(simulation_id)
+
+        # Build per-round data and aggregate action_types from timeline
         rounds = []
-        for r in run_state.rounds:
-            rounds.append({
-                "round_num": r.round_num,
-                "twitter_actions": r.twitter_actions,
-                "reddit_actions": r.reddit_actions,
-                "actions_count": r.actions_count
-            })
-
-        # Action type distribution — aggregate across all actions
         action_types: dict = {}
-        all_actions = []
-        for r in run_state.rounds:
-            all_actions.extend(r.actions)
-        for action in all_actions:
-            atype = action.action_type or "UNKNOWN"
-            action_types[atype] = action_types.get(atype, 0) + 1
+        twitter_total = 0
+        reddit_total = 0
 
-        # Platform totals
-        twitter_total = run_state.twitter_actions_count or 0
-        reddit_total = run_state.reddit_actions_count or 0
-        total_rounds = run_state.total_rounds or 1
-        completed_rounds = len(rounds) or 1
+        for r in timeline:
+            tw = r.get("twitter_actions", 0)
+            rd = r.get("reddit_actions", 0)
+            rounds.append({
+                "round_num": r.get("round_num", 0),
+                "twitter_actions": tw,
+                "reddit_actions": rd,
+                "actions_count": r.get("total_actions", tw + rd)
+            })
+            twitter_total += tw
+            reddit_total += rd
+            for atype, cnt in r.get("action_types", {}).items():
+                action_types[atype] = action_types.get(atype, 0) + cnt
+
+        # Fall back to run_state counters if timeline is empty
+        if not rounds:
+            twitter_total = run_state.twitter_actions_count or 0
+            reddit_total = run_state.reddit_actions_count or 0
+
+        completed_rounds = max(len(rounds), 1)
 
         analytics = {
             "rounds": rounds,
@@ -3102,7 +3106,7 @@ def get_simulation_analytics(simulation_id: str):
                 "twitter": twitter_total,
                 "reddit": reddit_total
             },
-            "total_rounds": total_rounds,
+            "total_rounds": run_state.total_rounds or completed_rounds,
             "completed_rounds": completed_rounds,
             "avg_actions_per_round": {
                 "twitter": round(twitter_total / completed_rounds, 1),
