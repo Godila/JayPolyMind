@@ -409,7 +409,6 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, h, reactive, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAgentLog, getConsoleLog } from '../api/report'
-import html2pdf from 'html2pdf.js'
 import ReportInsights from './ReportInsights.vue'
 
 const router = useRouter()
@@ -428,54 +427,14 @@ watch(logsCollapsed, val => localStorage.setItem('logsCollapsed', String(val)))
 
 // PDF export
 const isExportingPDF = ref(false)
-const exportPDF = async () => {
-  if (!leftPanel.value || isExportingPDF.value) return
+const exportPDF = () => {
+  if (isExportingPDF.value) return
   isExportingPDF.value = true
-
-  try {
-    await html2pdf().set({
-      margin: [15, 15],
-      filename: `report-${props.reportId || 'simulation'}.pdf`,
-      image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: 750,
-        // onclone modifies the CLONED document — live DOM is untouched
-        onclone: (_doc, clonedEl) => {
-          // Remove flex/overflow constraints from all ancestor containers
-          let node = clonedEl.parentElement
-          while (node && node.tagName !== 'BODY') {
-            node.style.overflow = 'visible'
-            node.style.maxWidth = 'none'
-            node.style.width = 'auto'
-            node.style.flex = 'none'
-            node = node.parentElement
-          }
-          // Set the panel to a clean 750px — no longer constrained by flex
-          clonedEl.style.cssText = [
-            'width:750px!important',
-            'max-width:750px!important',
-            'overflow:visible!important',
-            'padding:30px 30px 60px 30px!important',
-            'position:static!important'
-          ].join(';')
-          // Reset inner content wrapper
-          const wrapper = clonedEl.querySelector('.report-content-wrapper')
-          if (wrapper) wrapper.style.maxWidth = 'none'
-          // Single-column charts so nothing overflows horizontally
-          const grid = clonedEl.querySelector('.charts-grid')
-          if (grid) grid.style.gridTemplateColumns = '1fr'
-        }
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(leftPanel.value).save()
-  } finally {
-    isExportingPDF.value = false
-  }
+  const prev = document.title
+  document.title = `report-${props.reportId || 'simulation'}`
+  window.print()
+  document.title = prev
+  isExportingPDF.value = false
 }
 
 // Navigation
@@ -5270,4 +5229,50 @@ watch(() => props.reportId, (newId) => {
 .log-msg.error { color: #EF5350; }
 .log-msg.warning { color: #FFA726; }
 .log-msg.success { color: #66BB6A; }
+</style>
+
+<style>
+@media print {
+  /* Hide everything except the report left panel */
+  body * { visibility: hidden !important; }
+  .left-panel.report-style,
+  .left-panel.report-style * { visibility: visible !important; }
+
+  /* Position report panel as the only content on page */
+  .left-panel.report-style {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    padding: 20px 30px 40px 30px !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Remove max-width constraint from inner wrapper */
+  .left-panel.report-style .report-content-wrapper {
+    max-width: none !important;
+  }
+
+  /* Hide action buttons inside the report panel */
+  .left-panel.report-style .completion-actions,
+  .left-panel.report-style .pdf-btn,
+  .left-panel.report-style .go-interaction-btn { display: none !important; }
+
+  /* Charts: 2 columns fit fine on A4 */
+  .left-panel.report-style .charts-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Avoid breaking cards/sections across pages */
+  .left-panel.report-style .chart-card,
+  .left-panel.report-style .report-section-item { break-inside: avoid; }
+
+  /* Page margins */
+  @page { margin: 15mm; }
+}
 </style>
