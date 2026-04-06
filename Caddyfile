@@ -1,0 +1,20 @@
+{$DOMAIN} {
+    tls {$ACME_EMAIL}
+
+    # Flask API — все /api/* запросы
+    reverse_proxy /api/* jaypolymind-api:5001 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        # Увеличенный таймаут для симуляций (долгие запросы)
+        transport http {
+            read_timeout 300s
+        }
+    }
+
+    # Vue SPA — статические файлы с fallback на index.html
+    root * /srv
+    encode gzip
+    file_server
+    try_files {path} /index.html
+}
