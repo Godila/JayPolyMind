@@ -292,10 +292,10 @@ async function handlePreview() {
       activity:    form.value.activity,
       interests:   form.value.interests,
     })
-    if (res.data?.success) {
-      previewData.value = res.data.data
+    if (res.success) {
+      previewData.value = res.data
     } else {
-      errorMsg.value = res.data?.error || 'Ошибка генерации превью'
+      errorMsg.value = res.error || 'Ошибка генерации превью'
     }
   } catch (e) {
     errorMsg.value = e?.response?.data?.error || e.message || 'Ошибка сети'
@@ -316,8 +316,8 @@ async function handleAdd() {
       activity:    form.value.activity,
       interests:   form.value.interests,
     })
-    if (res.data?.success) {
-      emit('added', res.data.data)
+    if (res.success) {
+      emit('added', res.data)
       // Reset form
       form.value      = { name: '', description: '', stance: 'neutral', activity: 0.5, interests: [] }
       selectedPreset.value = null
@@ -325,7 +325,7 @@ async function handleAdd() {
       tagInput.value       = ''
       emit('close')
     } else {
-      errorMsg.value = res.data?.error || 'Ошибка добавления агента'
+      errorMsg.value = res.error || 'Ошибка добавления агента'
     }
   } catch (e) {
     errorMsg.value = e?.response?.data?.error || e.message || 'Ошибка сети'
