@@ -1695,6 +1695,32 @@ def stop_simulation():
         }), 500
 
 
+@simulation_bp.route('/<simulation_id>/pause', methods=['POST'])
+def pause_simulation(simulation_id: str):
+    """Pause a running simulation"""
+    try:
+        run_state = SimulationRunner.pause_simulation(simulation_id)
+        return jsonify({"success": True, "data": run_state.to_dict()})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Failed to pause simulation: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@simulation_bp.route('/<simulation_id>/resume', methods=['POST'])
+def resume_simulation(simulation_id: str):
+    """Resume a paused simulation"""
+    try:
+        run_state = SimulationRunner.resume_simulation(simulation_id)
+        return jsonify({"success": True, "data": run_state.to_dict()})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Failed to resume simulation: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # ============== Real-time status monitoring interface ==============
 
 @simulation_bp.route('/<simulation_id>/run-status', methods=['GET'])
@@ -3025,6 +3051,69 @@ def delete_custom_agent(simulation_id: str, agent_id: int):
 
     except Exception as e:
         logger.error(f"delete_custom_agent error: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
+
+@simulation_bp.route('/<simulation_id>/analytics', methods=['GET'])
+def get_simulation_analytics(simulation_id: str):
+    """
+    Aggregated simulation analytics for charts.
+    Returns per-round activity, action type distribution,
+    platform totals, and avg actions per round.
+    """
+    try:
+        run_state = SimulationRunner.get_run_state(simulation_id)
+        if not run_state:
+            return jsonify({"success": False, "error": "Simulation not found"}), 404
+
+        # Per-round data
+        rounds = []
+        for r in run_state.rounds:
+            rounds.append({
+                "round_num": r.round_num,
+                "twitter_actions": r.twitter_actions,
+                "reddit_actions": r.reddit_actions,
+                "actions_count": r.actions_count
+            })
+
+        # Action type distribution — aggregate across all actions
+        action_types: dict = {}
+        all_actions = []
+        for r in run_state.rounds:
+            all_actions.extend(r.actions)
+        for action in all_actions:
+            atype = action.action_type or "UNKNOWN"
+            action_types[atype] = action_types.get(atype, 0) + 1
+
+        # Platform totals
+        twitter_total = run_state.twitter_actions_count or 0
+        reddit_total = run_state.reddit_actions_count or 0
+        total_rounds = run_state.total_rounds or 1
+        completed_rounds = len(rounds) or 1
+
+        analytics = {
+            "rounds": rounds,
+            "action_types": action_types,
+            "platform_totals": {
+                "twitter": twitter_total,
+                "reddit": reddit_total
+            },
+            "total_rounds": total_rounds,
+            "completed_rounds": completed_rounds,
+            "avg_actions_per_round": {
+                "twitter": round(twitter_total / completed_rounds, 1),
+                "reddit": round(reddit_total / completed_rounds, 1)
+            }
+        }
+
+        return jsonify({"success": True, "data": analytics})
+
+    except Exception as e:
+        logger.error(f"get_simulation_analytics error: {e}")
         return jsonify({
             "success": False,
             "error": str(e),

@@ -16,6 +16,9 @@
             <div class="header-divider"></div>
           </div>
 
+          <!-- Simulation charts -->
+          <SimulationCharts v-if="simulationId" :simulation-id="simulationId" />
+
           <!-- Sections List -->
           <div class="sections-list">
             <div 
@@ -128,13 +131,23 @@
           </div>
 
           <!-- Next Step Button - Show after completion -->
-          <button v-if="isComplete" class="next-step-btn" @click="goToInteraction">
-            <span>Перейти к взаимодействию</span>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-          </button>
+          <div v-if="isComplete" class="completion-actions">
+            <button class="pdf-btn" :disabled="isExportingPDF" @click="exportPDF">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              {{ isExportingPDF ? 'Генерация...' : 'Скачать PDF' }}
+            </button>
+            <button class="next-step-btn" @click="goToInteraction">
+              <span>Перейти к взаимодействию</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
 
           <div class="workflow-divider"></div>
         </div>
@@ -393,6 +406,8 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, h, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAgentLog, getConsoleLog } from '../api/report'
+import html2pdf from 'html2pdf.js'
+import SimulationCharts from './SimulationCharts.vue'
 
 const router = useRouter()
 
@@ -403,6 +418,24 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['add-log', 'update-status'])
+
+// PDF export
+const isExportingPDF = ref(false)
+const exportPDF = async () => {
+  if (!leftPanel.value || isExportingPDF.value) return
+  isExportingPDF.value = true
+  try {
+    await html2pdf().set({
+      margin: [12, 15],
+      filename: `report-${props.reportId || 'simulation'}.pdf`,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(leftPanel.value).save()
+  } finally {
+    isExportingPDF.value = false
+  }
+}
 
 // Navigation
 const goToInteraction = () => {
@@ -3397,13 +3430,47 @@ watch(() => props.reportId, (newId) => {
   font-size: 14px;
 }
 
+.completion-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 20px 0 20px;
+}
+
+.pdf-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  background: transparent;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pdf-btn:hover:not(:disabled) {
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+.pdf-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .next-step-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: calc(100% - 40px);
-  margin: 4px 20px 0 20px;
+  width: 100%;
+  margin: 0;
   padding: 14px 20px;
   font-size: 14px;
   font-weight: 600;

@@ -91,7 +91,29 @@
       </div>
 
       <div class="action-controls">
-        <button 
+        <!-- Simulation controls — visible only while running -->
+        <div v-if="phase === 1" class="sim-controls">
+          <button
+            class="ctrl-btn pause-btn"
+            :disabled="isPausing || isStopping"
+            @click="isPaused ? handleResumeSimulation() : handlePauseSimulation()"
+          >
+            <span v-if="isPausing" class="loading-spinner-small"></span>
+            <span v-else>{{ isPaused ? '▶' : '⏸' }}</span>
+            {{ isPaused ? 'Продолжить' : 'Пауза' }}
+          </button>
+          <button
+            class="ctrl-btn stop-btn"
+            :disabled="isStopping || isPausing"
+            @click="handleStopWithConfirm"
+          >
+            <span v-if="isStopping" class="loading-spinner-small"></span>
+            <span v-else>⏹</span>
+            Остановить
+          </button>
+        </div>
+
+        <button
           class="action-btn primary"
           :disabled="phase !== 2 || isGeneratingReport"
           @click="handleNextStep"
@@ -291,10 +313,12 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { 
-  startSimulation, 
+import {
+  startSimulation,
   stopSimulation,
-  getRunStatus, 
+  pauseSimulation,
+  resumeSimulation,
+  getRunStatus,
   getRunStatusDetail
 } from '../api/simulation'
 import { generateReport } from '../api/report'
@@ -322,6 +346,8 @@ watch(logsCollapsed, val => localStorage.setItem('logsCollapsed', String(val)))
 const phase = ref(0) // 0: Not started, 1: Running, 2: Completed
 const isStarting = ref(false)
 const isStopping = ref(false)
+const isPausing = ref(false)
+const isPaused = ref(false)
 const startError = ref(null)
 const runStatus = ref({})
 const allActions = ref([]) // All actions (incremental accumulation)
@@ -378,6 +404,8 @@ const resetAllState = () => {
   startError.value = null
   isStarting.value = false
   isStopping.value = false
+  isPausing.value = false
+  isPaused.value = false
   stopPolling()  // Stop any existing polling
 }
 
@@ -464,6 +492,52 @@ const handleStopSimulation = async () => {
   }
 }
 
+// Pause simulation
+const handlePauseSimulation = async () => {
+  if (!props.simulationId || isPausing.value) return
+  isPausing.value = true
+  addLog('Приостановка симуляции...')
+  try {
+    const res = await pauseSimulation({ simulation_id: props.simulationId })
+    if (res.success) {
+      isPaused.value = true
+      addLog('⏸ Симуляция поставлена на паузу')
+    } else {
+      addLog(`Ошибка паузы: ${res.error || 'Неизвестная ошибка'}`)
+    }
+  } catch (err) {
+    addLog(`Ошибка паузы: ${err.message}`)
+  } finally {
+    isPausing.value = false
+  }
+}
+
+// Resume simulation
+const handleResumeSimulation = async () => {
+  if (!props.simulationId || isPausing.value) return
+  isPausing.value = true
+  addLog('Возобновление симуляции...')
+  try {
+    const res = await resumeSimulation({ simulation_id: props.simulationId })
+    if (res.success) {
+      isPaused.value = false
+      addLog('▶ Симуляция возобновлена')
+    } else {
+      addLog(`Ошибка возобновления: ${res.error || 'Неизвестная ошибка'}`)
+    }
+  } catch (err) {
+    addLog(`Ошибка возобновления: ${err.message}`)
+  } finally {
+    isPausing.value = false
+  }
+}
+
+// Stop with confirmation
+const handleStopWithConfirm = async () => {
+  if (!window.confirm('Остановить симуляцию? Это действие необратимо.')) return
+  await handleStopSimulation()
+}
+
 // Polling status
 let statusTimer = null
 let detailTimer = null
@@ -511,6 +585,13 @@ const fetchRunStatus = async () => {
       if (data.reddit_current_round > prevRedditRound.value) {
         addLog(`[Topic Community] R${data.reddit_current_round}/${data.total_rounds} | T:${data.reddit_simulated_hours || 0}h | A:${data.reddit_actions_count}`)
         prevRedditRound.value = data.reddit_current_round
+      }
+
+      // Sync pause state from backend
+      if (data.runner_status === 'paused' && !isPaused.value) {
+        isPaused.value = true
+      } else if (data.runner_status === 'running' && isPaused.value) {
+        isPaused.value = false
       }
 
       // Check if simulation is complete (via runner_status or platform completion status)
@@ -689,11 +770,42 @@ watch(() => props.systemLogs?.length, () => {
   })
 })
 
-onMounted(() => {
-  addLog('Step3 Simulation initialization')
-  if (props.simulationId) {
-    doStartSimulation()
+onMounted(async () => {
+  addLog('Инициализация шага симуляции')
+  if (!props.simulationId) return
+
+  // Check if simulation is already running in background (e.g. after page refresh)
+  try {
+    const res = await getRunStatus(props.simulationId)
+    if (res.success && res.data) {
+      const status = res.data.runner_status
+      if (status === 'running' || status === 'starting') {
+        addLog('Обнаружена активная симуляция — подключение...')
+        runStatus.value = res.data
+        phase.value = 1
+        startStatusPolling()
+        startDetailPolling()
+        return
+      } else if (status === 'paused') {
+        addLog('Симуляция на паузе — подключение...')
+        runStatus.value = res.data
+        isPaused.value = true
+        phase.value = 1
+        startStatusPolling()
+        startDetailPolling()
+        return
+      } else if (status === 'completed' || status === 'stopped') {
+        addLog('✓ Симуляция уже завершена')
+        runStatus.value = res.data
+        phase.value = 2
+        return
+      }
+    }
+  } catch {
+    // status check failed — proceed to start normally
   }
+
+  doStartSimulation()
 })
 
 onUnmounted(() => {
@@ -900,6 +1012,57 @@ onUnmounted(() => {
 
 .action-btn:disabled {
   opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Simulation control buttons (pause/stop) */
+.sim-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+}
+
+.pause-btn {
+  background: transparent;
+  border-color: #555;
+  color: #333;
+}
+
+.pause-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #222;
+  color: #000;
+}
+
+.stop-btn {
+  background: transparent;
+  border-color: #e53e3e;
+  color: #c53030;
+}
+
+.stop-btn:hover:not(:disabled) {
+  background: #fff5f5;
+  border-color: #c53030;
+  color: #9b2c2c;
+}
+
+.ctrl-btn:disabled {
+  opacity: 0.35;
   cursor: not-allowed;
 }
 

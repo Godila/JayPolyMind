@@ -818,7 +818,59 @@ class SimulationRunner:
         
         logger.info(f"Simulation stopped: {simulation_id}")
         return state
-    
+
+    @classmethod
+    def pause_simulation(cls, simulation_id: str) -> "SimulationRunState":
+        """Pause simulation by suspending the subprocess"""
+        import signal, os
+        state = cls.get_run_state(simulation_id)
+        if not state:
+            raise ValueError(f"Simulation does not exist: {simulation_id}")
+        if state.runner_status != RunnerStatus.RUNNING:
+            raise ValueError(f"Simulation is not running: {simulation_id}, status={state.runner_status}")
+
+        state.runner_status = RunnerStatus.PAUSED
+        cls._save_run_state(state)
+
+        process = cls._processes.get(simulation_id)
+        if process and process.poll() is None:
+            try:
+                os.killpg(os.getpgid(process.pid), signal.SIGSTOP)
+            except Exception:
+                try:
+                    process.send_signal(signal.SIGSTOP)
+                except Exception as e:
+                    logger.warning(f"Could not send SIGSTOP: {e}")
+
+        logger.info(f"Simulation paused: {simulation_id}")
+        return state
+
+    @classmethod
+    def resume_simulation(cls, simulation_id: str) -> "SimulationRunState":
+        """Resume a paused simulation"""
+        import signal, os
+        state = cls.get_run_state(simulation_id)
+        if not state:
+            raise ValueError(f"Simulation does not exist: {simulation_id}")
+        if state.runner_status != RunnerStatus.PAUSED:
+            raise ValueError(f"Simulation is not paused: {simulation_id}, status={state.runner_status}")
+
+        state.runner_status = RunnerStatus.RUNNING
+        cls._save_run_state(state)
+
+        process = cls._processes.get(simulation_id)
+        if process and process.poll() is None:
+            try:
+                os.killpg(os.getpgid(process.pid), signal.SIGCONT)
+            except Exception:
+                try:
+                    process.send_signal(signal.SIGCONT)
+                except Exception as e:
+                    logger.warning(f"Could not send SIGCONT: {e}")
+
+        logger.info(f"Simulation resumed: {simulation_id}")
+        return state
+
     @classmethod
     def _read_actions_from_file(
         cls,

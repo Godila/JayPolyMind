@@ -93,6 +93,30 @@ export const stopSimulation = (data) => {
 }
 
 /**
+ * Pause simulation
+ * @param {Object} data - { simulation_id }
+ */
+export const pauseSimulation = (data) => {
+  return service.post(`/api/simulation/${data.simulation_id}/pause`, data)
+}
+
+/**
+ * Resume paused simulation
+ * @param {Object} data - { simulation_id }
+ */
+export const resumeSimulation = (data) => {
+  return service.post(`/api/simulation/${data.simulation_id}/resume`, data)
+}
+
+/**
+ * Get simulation analytics (aggregated round/action data for charts)
+ * @param {string} simulationId
+ */
+export const getSimulationAnalytics = (simulationId) => {
+  return service.get(`/api/simulation/${simulationId}/analytics`)
+}
+
+/**
  * Get simulation real-time run status
  * @param {string} simulationId
  */
