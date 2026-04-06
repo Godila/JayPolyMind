@@ -64,7 +64,7 @@ class EmbeddingService:
         self._cache_put(text, vector)
         return vector
 
-    def embed_batch(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
+    def embed_batch(self, texts: List[str], batch_size: int = 256) -> List[List[float]]:
         """
         Generate embeddings for multiple texts.
 

@@ -189,48 +189,66 @@ class GraphBuilderService:
         batch_size: int = 3,
         progress_callback: Optional[Callable] = None
     ) -> List[str]:
-        """Add text in batches to graph, return uuid list of all episodes"""
-        episode_uuids = []
+        """Add text in batches to graph, return uuid list of all episodes.
+
+        Within each batch, chunks are processed in parallel (batch_size workers).
+        NER+embed (LLM calls) run concurrently; Neo4j sessions are thread-safe.
+        """
+        import concurrent.futures
+        from threading import Lock
+
+        episode_uuids = [None] * len(chunks)
         total_chunks = len(chunks)
         total_batches = (total_chunks + batch_size - 1) // batch_size
+        completed_lock = Lock()
+        completed_count = [0]
 
-        logger.info(f"[graph_build] Starting: {total_chunks} chunks, {total_batches} batches (batch_size={batch_size})")
+        logger.info(f"[graph_build] Starting: {total_chunks} chunks, {total_batches} batches (parallel={batch_size})")
+
+        def process_chunk(chunk_idx: int, chunk: str) -> str:
+            chunk_preview = chunk[:80].replace('\n', ' ')
+            logger.info(
+                f"[graph_build] Chunk {chunk_idx + 1}/{total_chunks} "
+                f"({len(chunk)} chars): \"{chunk_preview}...\""
+            )
+            t0 = time.time()
+            episode_id = self.storage.add_text(graph_id, chunk)
+            elapsed = time.time() - t0
+            logger.info(f"[graph_build] Chunk {chunk_idx + 1}/{total_chunks} done in {elapsed:.1f}s")
+
+            with completed_lock:
+                completed_count[0] += 1
+                if progress_callback:
+                    progress_callback(
+                        f"Chunk {completed_count[0]}/{total_chunks} processed...",
+                        completed_count[0] / total_chunks
+                    )
+            return episode_id
 
         for i in range(0, total_chunks, batch_size):
-            batch_chunks = chunks[i:i + batch_size]
+            batch_chunks = list(enumerate(chunks[i:i + batch_size], start=i))
             batch_num = i // batch_size + 1
 
             if progress_callback:
-                progress = (i + len(batch_chunks)) / total_chunks
                 progress_callback(
-                    f"Processing batch {batch_num}/{total_batches} ({len(batch_chunks)} chunks)...",
-                    progress
+                    f"Batch {batch_num}/{total_batches} ({len(batch_chunks)} chunks in parallel)...",
+                    i / total_chunks
                 )
 
-            for j, chunk in enumerate(batch_chunks):
-                chunk_idx = i + j + 1
-                chunk_preview = chunk[:80].replace('\n', ' ')
-                logger.info(
-                    f"[graph_build] Chunk {chunk_idx}/{total_chunks} "
-                    f"({len(chunk)} chars): \"{chunk_preview}...\""
-                )
-                t0 = time.time()
-                try:
-                    episode_id = self.storage.add_text(graph_id, chunk)
-                    episode_uuids.append(episode_id)
-                    elapsed = time.time() - t0
-                    logger.info(
-                        f"[graph_build] Chunk {chunk_idx}/{total_chunks} done in {elapsed:.1f}s"
-                    )
-                except Exception as e:
-                    elapsed = time.time() - t0
-                    logger.error(
-                        f"[graph_build] Chunk {chunk_idx}/{total_chunks} FAILED "
-                        f"after {elapsed:.1f}s: {e}"
-                    )
-                    if progress_callback:
-                        progress_callback(f"Batch {batch_num} processing failed: {str(e)}", 0)
-                    raise
+            with concurrent.futures.ThreadPoolExecutor(max_workers=batch_size) as executor:
+                futures = {
+                    executor.submit(process_chunk, idx, chunk): idx
+                    for idx, chunk in batch_chunks
+                }
+                for future in concurrent.futures.as_completed(futures):
+                    idx = futures[future]
+                    try:
+                        episode_uuids[idx] = future.result()
+                    except Exception as e:
+                        logger.error(f"[graph_build] Chunk {idx + 1}/{total_chunks} FAILED: {e}")
+                        if progress_callback:
+                            progress_callback(f"Chunk {idx + 1} failed: {str(e)}", 0)
+                        raise
 
         logger.info(f"[graph_build] All {total_chunks} chunks processed successfully")
         return episode_uuids
