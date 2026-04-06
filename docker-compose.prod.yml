@@ -12,6 +12,7 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
     depends_on:
       - jaypolymind-api
     networks:
