@@ -388,12 +388,15 @@
     </div>
 
     <!-- Bottom Console Logs -->
-    <div class="console-logs">
-      <div class="log-header">
+    <div class="console-logs" :class="{ 'logs-collapsed': logsCollapsed }">
+      <div class="log-header" @click="logsCollapsed = !logsCollapsed" style="cursor:pointer">
         <span class="log-title">КОНСОЛЬ</span>
-        <span class="log-id">{{ reportId || 'NO_REPORT' }}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="log-id">{{ reportId || 'NO_REPORT' }}</span>
+          <span class="log-collapse-btn">{{ logsCollapsed ? '▲' : '▼' }}</span>
+        </div>
       </div>
-      <div class="log-content" ref="logContent">
+      <div class="log-content" ref="logContent" v-show="!logsCollapsed">
         <div class="log-line" v-for="(log, idx) in consoleLogs" :key="idx">
           <span class="log-msg" :class="getLogLevelClass(log)">{{ log }}</span>
         </div>
@@ -403,7 +406,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, h, reactive } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, h, reactive, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAgentLog, getConsoleLog } from '../api/report'
 import html2pdf from 'html2pdf.js'
@@ -418,6 +421,10 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['add-log', 'update-status'])
+
+// Console collapse (persisted via localStorage, same key as other steps)
+const logsCollapsed = ref(localStorage.getItem('logsCollapsed') === 'true')
+watch(logsCollapsed, val => localStorage.setItem('logsCollapsed', String(val)))
 
 // PDF export
 const isExportingPDF = ref(false)
@@ -1741,9 +1748,9 @@ const statusClass = computed(() => {
 })
 
 const statusText = computed(() => {
-  if (isComplete.value) return 'Completed'
-  if (agentLogs.value.length > 0) return 'Generating...'
-  return 'Waiting'
+  if (isComplete.value) return 'Завершено'
+  if (agentLogs.value.length > 0) return 'Генерация...'
+  return 'Ожидание'
 })
 
 const totalSections = computed(() => {
@@ -1820,9 +1827,9 @@ const workflowSteps = computed(() => {
   steps.push({
     key: 'planning',
     noLabel: 'PL',
-    title: 'Planning / Outline',
+    title: 'Планирование',
     status: planningStatus,
-    meta: planningStatus === 'active' ? 'IN PROGRESS' : ''
+    meta: planningStatus === 'active' ? 'В ПРОЦЕССЕ' : ''
   })
 
   // Sections (if outline exists)
@@ -1838,7 +1845,7 @@ const workflowSteps = computed(() => {
       noLabel: String(idx).padStart(2, '0'),
       title: section.title,
       status,
-      meta: status === 'active' ? 'IN PROGRESS' : ''
+      meta: status === 'active' ? 'В ПРОЦЕССЕ' : ''
     })
   })
 
@@ -1847,9 +1854,9 @@ const workflowSteps = computed(() => {
   steps.push({
     key: 'complete',
     noLabel: 'OK',
-    title: 'Complete',
+    title: 'Завершено',
     status: completeStatus,
-    meta: completeStatus === 'active' ? 'FINALIZING' : ''
+    meta: completeStatus === 'active' ? 'ФИНАЛИЗАЦИЯ' : ''
   })
 
   return steps
@@ -2024,16 +2031,16 @@ const getConnectorClass = (log, idx, total) => {
 
 const getActionLabel = (action) => {
   const labels = {
-    'report_start': 'Report Started',
-    'planning_start': 'Planning',
-    'planning_complete': 'Plan Complete',
-    'section_start': 'Section Start',
-    'section_content': 'Content Ready',
-    'section_complete': 'Section Done',
-    'tool_call': 'Tool Call',
-    'tool_result': 'Tool Result',
-    'llm_response': 'LLM Response',
-    'report_complete': 'Complete'
+    'report_start': 'Отчёт запущен',
+    'planning_start': 'Планирование',
+    'planning_complete': 'План готов',
+    'section_start': 'Раздел: начало',
+    'section_content': 'Контент готов',
+    'section_complete': 'Раздел готов',
+    'tool_call': 'Вызов инструмента',
+    'tool_result': 'Результат инструмента',
+    'llm_response': 'Ответ модели',
+    'report_complete': 'Отчёт завершён'
   }
   return labels[action] || action
 }
@@ -5172,6 +5179,21 @@ watch(() => props.reportId, (newId) => {
   font-family: 'JetBrains Mono', monospace;
   border-top: 1px solid #222;
   flex-shrink: 0;
+}
+
+.console-logs.logs-collapsed {
+  padding: 0 16px;
+}
+
+.console-logs.logs-collapsed .log-header {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.log-collapse-btn {
+  font-size: 9px;
+  opacity: 0.5;
 }
 
 .log-header {
