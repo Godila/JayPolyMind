@@ -4,6 +4,7 @@ Provides interfaces for simulation report generation, retrieval, and conversatio
 """
 
 import os
+import json
 import traceback
 import threading
 from flask import request, jsonify, send_file, current_app
@@ -312,6 +313,20 @@ def get_single_section(report_id: str, section_index: int):
     except Exception as e:
         logger.error(f"Failed to get section content: {str(e)}")
         return jsonify({"success": False, "error": str(e), "traceback": traceback.format_exc()}), 500
+
+
+@report_bp.route('/<report_id>/metrics', methods=['GET'])
+def get_report_metrics(report_id: str):
+    try:
+        metrics_path = os.path.join(ReportManager._get_report_folder(report_id), 'metrics.json')
+        if not os.path.exists(metrics_path):
+            return jsonify({"success": False, "error": "Metrics not available for this report"}), 404
+        with open(metrics_path, 'r', encoding='utf-8') as f:
+            metrics = json.load(f)
+        return jsonify({"success": True, "data": metrics})
+    except Exception as e:
+        logger.error(f"Failed to get report metrics: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # ============== Report Status Check Interface ==============

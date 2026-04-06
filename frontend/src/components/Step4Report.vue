@@ -16,8 +16,8 @@
             <div class="header-divider"></div>
           </div>
 
-          <!-- Simulation charts -->
-          <SimulationCharts v-if="simulationId" :simulation-id="simulationId" />
+          <!-- Report insights charts -->
+          <ReportInsights v-if="reportId && simulationId" :report-id="reportId" :simulation-id="simulationId" />
 
           <!-- Sections List -->
           <div class="sections-list">
@@ -410,7 +410,7 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick, h, reactive, wa
 import { useRouter } from 'vue-router'
 import { getAgentLog, getConsoleLog } from '../api/report'
 import html2pdf from 'html2pdf.js'
-import SimulationCharts from './SimulationCharts.vue'
+import ReportInsights from './ReportInsights.vue'
 
 const router = useRouter()
 
@@ -435,17 +435,28 @@ const exportPDF = async () => {
   const el = leftPanel.value
   const savedStyle = el.getAttribute('style') || ''
   // Temporarily make element full-width so PDF fills A4 page
-  el.style.cssText = 'width: 1100px !important; max-width: 1100px !important; overflow: visible !important; position: relative !important;'
+  // Force single-column charts and reset inner max-width constraints
+  const chartsGrid = el.querySelector('.charts-grid')
+  const savedGrid = chartsGrid ? chartsGrid.style.gridTemplateColumns : null
+  if (chartsGrid) chartsGrid.style.gridTemplateColumns = '1fr'
+
+  const wrapper = el.querySelector('.report-content-wrapper')
+  const savedWrapper = wrapper ? wrapper.style.maxWidth : null
+  if (wrapper) wrapper.style.maxWidth = 'none'
+
+  el.style.cssText = 'width: 750px !important; max-width: 750px !important; overflow: visible !important;'
 
   try {
     await html2pdf().set({
-      margin: [12, 14],
+      margin: [15, 15],
       filename: `report-${props.reportId || 'simulation'}.pdf`,
       image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 1.5, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 1100 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 750 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(el).save()
   } finally {
+    if (chartsGrid && savedGrid !== null) chartsGrid.style.gridTemplateColumns = savedGrid
+    if (wrapper && savedWrapper !== null) wrapper.style.maxWidth = savedWrapper
     el.setAttribute('style', savedStyle)
     isExportingPDF.value = false
   }
