@@ -25,36 +25,30 @@
 - Goal: refactoring + deploy testing
 
 ## Rules — Remote Commands via RTK
-Always prefix VPS commands with rtk over SSH:
+Always prefix VPS commands with rtk over SSH.
+Project dir on VPS: /opt/jaypolymind
+Compose file: docker-compose.prod.yml
 
 ### Docker
-- `ssh vps "rtk docker compose logs --tail=100 <service>"`
-- `ssh vps "rtk docker compose ps"`
-- `ssh vps "rtk docker compose up -d --build"`
+- `ssh vps "cd /opt/jaypolymind && rtk docker compose -f docker-compose.prod.yml logs --tail=100 <service>"`
+- `ssh vps "cd /opt/jaypolymind && rtk docker compose -f docker-compose.prod.yml ps"`
+- `ssh vps "cd /opt/jaypolymind && rtk docker compose -f docker-compose.prod.yml up -d --build"`
+- `ssh vps "cd /opt/jaypolymind && rtk docker compose -f docker-compose.prod.yml build --no-cache <service>"`
 - `ssh vps "rtk docker logs <container>"`
-- `ssh vps "rtk docker images"`
 
 ### Git (on VPS)
-- `ssh vps "rtk git status"`
-- `ssh vps "rtk git log -n 10"`
-- `ssh vps "rtk git diff"`
-- `ssh vps "rtk git pull"`
+- `ssh vps "cd /opt/jaypolymind && rtk git status"`
+- `ssh vps "cd /opt/jaypolymind && rtk git log -n 10"`
+- `ssh vps "cd /opt/jaypolymind && rtk git pull"`
 
 ### Files & Search (on VPS)
-- `ssh vps "rtk ls /path/to/project"`
-- `ssh vps "rtk grep 'pattern' /path/to/project"`
-- `ssh vps "rtk find '*.log' /var/log"`
-- `ssh vps "rtk read /path/to/file.conf"`
+- `ssh vps "rtk ls /opt/jaypolymind"`
+- `ssh vps "rtk grep 'pattern' /opt/jaypolymind"`
+- `ssh vps "rtk read /opt/jaypolymind/.env"`
 
 ### Logs & System (on VPS)
-- `ssh vps "rtk log /var/log/app.log"`
-- `ssh vps "rtk curl http://localhost:8080/health"`
+- `ssh vps "rtk curl http://localhost:5001/api/health"`
 - `ssh vps "rtk env -f APP"`
-
-### Test Runners (on VPS)
-- `ssh vps "rtk pytest"`
-- `ssh vps "rtk go test"`
-- `ssh vps "rtk cargo test"`
 
 Never run any of these without rtk prefix on VPS.
 
