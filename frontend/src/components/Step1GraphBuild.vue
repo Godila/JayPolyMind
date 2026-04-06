@@ -172,11 +172,14 @@
 
     <!-- Bottom Info / Logs -->
     <div class="system-logs">
-      <div class="log-header">
+      <div class="log-header" @click="logsCollapsed = !logsCollapsed">
         <span class="log-title">СИСТЕМНЫЙ ЖУРНАЛ</span>
         <span class="log-id">{{ projectData?.project_id || 'NO_PROJECT' }}</span>
+        <button class="log-toggle" :title="logsCollapsed ? 'Развернуть' : 'Свернуть'">
+          {{ logsCollapsed ? '▲' : '▼' }}
+        </button>
       </div>
-      <div class="log-content" ref="logContent">
+      <div class="log-content" ref="logContent" v-show="!logsCollapsed">
         <div class="log-line" v-for="(log, idx) in systemLogs" :key="idx">
           <span class="log-time">{{ log.time }}</span>
           <span class="log-msg">{{ log.msg }}</span>
@@ -206,6 +209,7 @@ defineEmits(['next-step'])
 
 const selectedOntologyItem = ref(null)
 const logContent = ref(null)
+const logsCollapsed = ref(false)
 const creatingSimulation = ref(false)
 
 // Enter environment setup - create simulation and navigate
@@ -654,12 +658,25 @@ watch(() => props.systemLogs.length, () => {
 .log-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   border-bottom: 1px solid #333;
   padding-bottom: 8px;
   margin-bottom: 8px;
   font-size: 10px;
   color: #888;
+  cursor: pointer;
+  user-select: none;
 }
+.log-toggle {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+.log-toggle:hover { color: #aaa; }
 
 .log-content {
   display: flex;
