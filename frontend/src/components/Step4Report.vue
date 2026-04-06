@@ -427,14 +427,43 @@ watch(logsCollapsed, val => localStorage.setItem('logsCollapsed', String(val)))
 
 // PDF export
 const isExportingPDF = ref(false)
-const exportPDF = () => {
-  if (isExportingPDF.value) return
+const exportPDF = async () => {
+  if (!leftPanel.value || isExportingPDF.value) return
   isExportingPDF.value = true
-  const prev = document.title
-  document.title = `report-${props.reportId || 'simulation'}`
-  window.print()
-  document.title = prev
-  isExportingPDF.value = false
+  try {
+    const { default: html2pdf } = await import('html2pdf.js')
+    await html2pdf().set({
+      margin: [12, 12],
+      filename: `report-${props.reportId || 'simulation'}.pdf`,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        onclone: (doc, el) => {
+          // Isolate element as sole child of body — eliminates all parent constraints
+          const body = doc.body
+          body.innerHTML = ''
+          body.style.cssText = 'margin:0;padding:0;background:#fff'
+          body.appendChild(el)
+          el.style.cssText = [
+            'width:760px', 'max-width:760px', 'overflow:visible',
+            'background:#fff', 'padding:30px 32px 50px', 'position:static',
+            'box-shadow:none', 'border:none', 'flex:none'
+          ].join('!important;') + '!important'
+          const wrapper = el.querySelector('.report-content-wrapper')
+          if (wrapper) wrapper.style.maxWidth = 'none'
+          const grid = el.querySelector('.charts-grid')
+          if (grid) grid.style.gridTemplateColumns = '1fr'
+        }
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(leftPanel.value).save()
+  } finally {
+    isExportingPDF.value = false
+  }
 }
 
 // Navigation
@@ -5231,48 +5260,3 @@ watch(() => props.reportId, (newId) => {
 .log-msg.success { color: #66BB6A; }
 </style>
 
-<style>
-@media print {
-  /* Hide everything except the report left panel */
-  body * { visibility: hidden !important; }
-  .left-panel.report-style,
-  .left-panel.report-style * { visibility: visible !important; }
-
-  /* Position report panel as the only content on page */
-  .left-panel.report-style {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-    height: auto !important;
-    overflow: visible !important;
-    background: #fff !important;
-    padding: 20px 30px 40px 30px !important;
-    box-shadow: none !important;
-    border: none !important;
-  }
-
-  /* Remove max-width constraint from inner wrapper */
-  .left-panel.report-style .report-content-wrapper {
-    max-width: none !important;
-  }
-
-  /* Hide action buttons inside the report panel */
-  .left-panel.report-style .completion-actions,
-  .left-panel.report-style .pdf-btn,
-  .left-panel.report-style .go-interaction-btn { display: none !important; }
-
-  /* Charts: 2 columns fit fine on A4 */
-  .left-panel.report-style .charts-grid {
-    grid-template-columns: 1fr 1fr !important;
-  }
-
-  /* Avoid breaking cards/sections across pages */
-  .left-panel.report-style .chart-card,
-  .left-panel.report-style .report-section-item { break-inside: avoid; }
-
-  /* Page margins */
-  @page { margin: 15mm; }
-}
-</style>
