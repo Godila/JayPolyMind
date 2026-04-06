@@ -586,7 +586,7 @@ Please output the report outline in JSON format as follows:
 }
 
 Note: sections array must have at least 2 and at most 5 elements!
-IMPORTANT: The entire report outline (title, summary, section titles and descriptions) MUST be written in Russian."""
+IMPORTANT: The entire report outline (title, summary, section titles and descriptions) MUST be written in Russian. Use natural Russian language — avoid anglicisms and transliterations (e.g. use "системные риски" not "эмерджентные риски", "ключевые тенденции" not "тренды" etc.)."""
 
 PLAN_USER_PROMPT_TEMPLATE = """\
 [Prediction Scenario Settings]
@@ -658,6 +658,7 @@ Your task is to:
    - Keep original meaning unchanged during translation, ensure natural expression
    - This rule applies to both body text and quoted content (> format)
    - Write ONLY in Russian throughout the entire report
+   - Use natural literary Russian — avoid anglicisms and transliterations (e.g. "системные риски" not "эмерджентные риски", "тенденции" not "тренды", "непредвиденные" not "форс-мажорные")
 
 4. [Faithfully Present Prediction Results]
    - Report content must reflect simulation results that represent the future in the simulated world
