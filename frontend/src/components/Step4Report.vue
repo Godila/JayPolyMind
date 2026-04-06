@@ -432,32 +432,48 @@ const exportPDF = async () => {
   if (!leftPanel.value || isExportingPDF.value) return
   isExportingPDF.value = true
 
-  const el = leftPanel.value
-  const savedStyle = el.getAttribute('style') || ''
-  // Temporarily make element full-width so PDF fills A4 page
-  // Force single-column charts and reset inner max-width constraints
-  const chartsGrid = el.querySelector('.charts-grid')
-  const savedGrid = chartsGrid ? chartsGrid.style.gridTemplateColumns : null
-  if (chartsGrid) chartsGrid.style.gridTemplateColumns = '1fr'
-
-  const wrapper = el.querySelector('.report-content-wrapper')
-  const savedWrapper = wrapper ? wrapper.style.maxWidth : null
-  if (wrapper) wrapper.style.maxWidth = 'none'
-
-  el.style.cssText = 'width: 750px !important; max-width: 750px !important; overflow: visible !important;'
-
   try {
     await html2pdf().set({
       margin: [15, 15],
       filename: `report-${props.reportId || 'simulation'}.pdf`,
       image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 750 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 750,
+        // onclone modifies the CLONED document — live DOM is untouched
+        onclone: (_doc, clonedEl) => {
+          // Remove flex/overflow constraints from all ancestor containers
+          let node = clonedEl.parentElement
+          while (node && node.tagName !== 'BODY') {
+            node.style.overflow = 'visible'
+            node.style.maxWidth = 'none'
+            node.style.width = 'auto'
+            node.style.flex = 'none'
+            node = node.parentElement
+          }
+          // Set the panel to a clean 750px — no longer constrained by flex
+          clonedEl.style.cssText = [
+            'width:750px!important',
+            'max-width:750px!important',
+            'overflow:visible!important',
+            'padding:30px 30px 60px 30px!important',
+            'position:static!important'
+          ].join(';')
+          // Reset inner content wrapper
+          const wrapper = clonedEl.querySelector('.report-content-wrapper')
+          if (wrapper) wrapper.style.maxWidth = 'none'
+          // Single-column charts so nothing overflows horizontally
+          const grid = clonedEl.querySelector('.charts-grid')
+          if (grid) grid.style.gridTemplateColumns = '1fr'
+        }
+      },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(el).save()
+    }).from(leftPanel.value).save()
   } finally {
-    if (chartsGrid && savedGrid !== null) chartsGrid.style.gridTemplateColumns = savedGrid
-    if (wrapper && savedWrapper !== null) wrapper.style.maxWidth = savedWrapper
-    el.setAttribute('style', savedStyle)
     isExportingPDF.value = false
   }
 }
