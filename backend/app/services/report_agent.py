@@ -1727,6 +1727,9 @@ class ReportAgent:
             
             # savefinalReport
             ReportManager.save_report(report)
+            # Extract structured metrics before marking completed (avoids race condition)
+            self.extract_metrics(report_id, report.markdown_content)
+
             ReportManager.update_progress(
                 report_id, "completed", 100, "reportgeneratecomplete",
                 completed_sections=completed_section_titles
@@ -1736,9 +1739,6 @@ class ReportAgent:
                 progress_callback("completed", 100, "reportgeneratecomplete")
 
             logger.info(f"reportgeneratecomplete: {report_id}")
-
-            # Extract structured metrics for charts (non-critical)
-            self.extract_metrics(report_id, report.markdown_content)
             
             # Closeconsoleloglogger
             if self.console_logger:
