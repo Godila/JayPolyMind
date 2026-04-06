@@ -44,8 +44,10 @@ class Config:
     NEO4J_PASSWORD = os.environ.get('NEO4J_PASSWORD', 'jaypolymind')
 
     # Embedding configuration
-    EMBEDDING_MODEL = os.environ.get('EMBEDDING_MODEL', 'nomic-embed-text')
-    EMBEDDING_BASE_URL = os.environ.get('EMBEDDING_BASE_URL', 'http://localhost:11434')
+    EMBEDDING_API_KEY = os.environ.get('EMBEDDING_API_KEY', '')
+    EMBEDDING_MODEL = os.environ.get('EMBEDDING_MODEL', 'openai/text-embedding-3-small')
+    EMBEDDING_BASE_URL = os.environ.get('EMBEDDING_BASE_URL', 'https://openrouter.ai/api/v1')
+    EMBEDDING_DIMENSIONS = int(os.environ.get('EMBEDDING_DIMENSIONS', '1536'))
 
     # File upload configuration
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB

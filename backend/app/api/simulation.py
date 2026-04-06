@@ -1695,6 +1695,32 @@ def stop_simulation():
         }), 500
 
 
+@simulation_bp.route('/<simulation_id>/pause', methods=['POST'])
+def pause_simulation(simulation_id: str):
+    """Pause a running simulation"""
+    try:
+        run_state = SimulationRunner.pause_simulation(simulation_id)
+        return jsonify({"success": True, "data": run_state.to_dict()})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Failed to pause simulation: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@simulation_bp.route('/<simulation_id>/resume', methods=['POST'])
+def resume_simulation(simulation_id: str):
+    """Resume a paused simulation"""
+    try:
+        run_state = SimulationRunner.resume_simulation(simulation_id)
+        return jsonify({"success": True, "data": run_state.to_dict()})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Failed to resume simulation: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # ============== Real-time status monitoring interface ==============
 
 @simulation_bp.route('/<simulation_id>/run-status', methods=['GET'])
@@ -3025,6 +3051,96 @@ def delete_custom_agent(simulation_id: str, agent_id: int):
 
     except Exception as e:
         logger.error(f"delete_custom_agent error: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
+
+@simulation_bp.route('/<simulation_id>/analytics', methods=['GET'])
+def get_simulation_analytics(simulation_id: str):
+    """
+    Aggregated simulation analytics for charts.
+    Reads from JSONL action files via get_all_actions() — works after reload.
+    """
+    try:
+        run_state = SimulationRunner.get_run_state(simulation_id)
+        if not run_state:
+            return jsonify({"success": False, "error": "Simulation not found"}), 404
+
+        # get_all_actions reads directly from JSONL files — works after restart
+        all_actions = SimulationRunner.get_all_actions(simulation_id)
+
+        rounds_map: dict = {}
+        action_types: dict = {}
+        agent_map: dict = {}
+        twitter_total = 0
+        reddit_total = 0
+
+        for a in all_actions:
+            rn = a.round_num
+            platform = a.platform or ""
+            atype = a.action_type or "UNKNOWN"
+            name = a.agent_name or f"Agent {a.agent_id}"
+
+            # Per-round aggregation
+            if rn not in rounds_map:
+                rounds_map[rn] = {"round_num": rn, "twitter_actions": 0, "reddit_actions": 0, "actions_count": 0}
+            if platform == "twitter":
+                rounds_map[rn]["twitter_actions"] += 1
+                twitter_total += 1
+            else:
+                rounds_map[rn]["reddit_actions"] += 1
+                reddit_total += 1
+            rounds_map[rn]["actions_count"] += 1
+
+            # Global action type aggregation
+            action_types[atype] = action_types.get(atype, 0) + 1
+
+            # Per-agent aggregation
+            if name not in agent_map:
+                agent_map[name] = {"total": 0, "twitter": 0, "reddit": 0, "types": {}}
+            agent_map[name]["total"] += 1
+            if platform == "twitter":
+                agent_map[name]["twitter"] += 1
+            else:
+                agent_map[name]["reddit"] += 1
+            agent_map[name]["types"][atype] = agent_map[name]["types"].get(atype, 0) + 1
+
+        rounds = sorted(rounds_map.values(), key=lambda r: r["round_num"])
+
+        # Fallback to run_state counters if no JSONL data
+        if not rounds:
+            twitter_total = run_state.twitter_actions_count or 0
+            reddit_total = run_state.reddit_actions_count or 0
+
+        completed_rounds = max(len(rounds), 1)
+
+        # Top-10 agents sorted by total activity
+        top_agents = sorted(agent_map.items(), key=lambda x: x[1]["total"], reverse=True)[:10]
+        agent_actions = {name: data for name, data in top_agents}
+
+        analytics = {
+            "rounds": rounds,
+            "action_types": action_types,
+            "agent_actions": agent_actions,
+            "platform_totals": {
+                "twitter": twitter_total,
+                "reddit": reddit_total
+            },
+            "total_rounds": run_state.total_rounds or completed_rounds,
+            "completed_rounds": completed_rounds,
+            "avg_actions_per_round": {
+                "twitter": round(twitter_total / completed_rounds, 1),
+                "reddit": round(reddit_total / completed_rounds, 1)
+            }
+        }
+
+        return jsonify({"success": True, "data": analytics})
+
+    except Exception as e:
+        logger.error(f"get_simulation_analytics error: {e}")
         return jsonify({
             "success": False,
             "error": str(e),

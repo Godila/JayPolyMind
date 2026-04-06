@@ -15,7 +15,7 @@
             :class="{ active: viewMode === mode }"
             @click="viewMode = mode"
           >
-            {{ { graph: 'Граф', split: 'Разделить', workbench: 'Рабочий стол' }[mode] }}
+            {{ { graph: 'Граф', split: 'Сплит', workbench: 'Рабочий стол' }[mode] }}
           </button>
         </div>
       </div>
@@ -197,8 +197,8 @@ const handleNewProject = async () => {
   try {
     loading.value = true
     currentPhase.value = 0
-    ontologyProgress.value = { message: 'Uploading and analyzing docs...' }
-    addLog('Starting ontology generation: Uploading files...')
+    ontologyProgress.value = { message: 'Загрузка файлов и анализ документов...' }
+    addLog('Запуск генерации онтологии: загрузка файлов...')
     
     const formData = new FormData()
     pending.files.forEach(f => formData.append('files', f))

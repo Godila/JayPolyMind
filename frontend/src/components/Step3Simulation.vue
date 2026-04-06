@@ -18,7 +18,7 @@
           </div>
           <div class="platform-stats">
             <span class="stat">
-              <span class="stat-label">ROUND</span>
+              <span class="stat-label">РАУНД</span>
               <span class="stat-value mono">{{ runStatus.twitter_current_round || 0 }}<span class="stat-total">/{{ runStatus.total_rounds || maxRounds || '-' }}</span></span>
             </span>
             <span class="stat">
@@ -59,7 +59,7 @@
           </div>
           <div class="platform-stats">
             <span class="stat">
-              <span class="stat-label">ROUND</span>
+              <span class="stat-label">РАУНД</span>
               <span class="stat-value mono">{{ runStatus.reddit_current_round || 0 }}<span class="stat-total">/{{ runStatus.total_rounds || maxRounds || '-' }}</span></span>
             </span>
             <span class="stat">
@@ -91,7 +91,28 @@
       </div>
 
       <div class="action-controls">
-        <button 
+        <template v-if="phase === 1">
+          <button
+            class="ctrl-icon-btn"
+            :title="isPaused ? 'Продолжить' : 'Пауза'"
+            :disabled="isPausing || isStopping"
+            @click="isPaused ? handleResumeSimulation() : handlePauseSimulation()"
+          >
+            <span v-if="isPausing" class="loading-spinner-small"></span>
+            <span v-else>{{ isPaused ? '▶' : '⏸' }}</span>
+          </button>
+          <button
+            class="ctrl-icon-btn ctrl-stop"
+            title="Остановить"
+            :disabled="isStopping || isPausing"
+            @click="handleStopWithConfirm"
+          >
+            <span v-if="isStopping" class="loading-spinner-small"></span>
+            <span v-else>⏹</span>
+          </button>
+        </template>
+
+        <button
           class="action-btn primary"
           :disabled="phase !== 2 || isGeneratingReport"
           @click="handleNextStep"
@@ -264,18 +285,21 @@
 
         <div v-if="allActions.length === 0" class="waiting-state">
           <div class="pulse-ring"></div>
-          <span>Waiting for agent actions...</span>
+          <span>Ожидание действий агентов...</span>
         </div>
       </div>
     </div>
 
     <!-- Bottom Info / Logs -->
-    <div class="system-logs">
-      <div class="log-header">
-        <span class="log-title">SIMULATION MONITOR</span>
+    <div class="system-logs" :class="{ 'logs-collapsed': logsCollapsed }">
+      <div class="log-header" @click="logsCollapsed = !logsCollapsed">
+        <span class="log-title">ЖУРНАЛ СИМУЛЯЦИИ</span>
         <span class="log-id">{{ simulationId || 'NO_SIMULATION' }}</span>
+        <button class="log-toggle" :title="logsCollapsed ? 'Развернуть' : 'Свернуть'">
+          {{ logsCollapsed ? '▲' : '▼' }}
+        </button>
       </div>
-      <div class="log-content" ref="logContent">
+      <div class="log-content" ref="logContent" v-show="!logsCollapsed">
         <div class="log-line" v-for="(log, idx) in systemLogs" :key="idx">
           <span class="log-time">{{ log.time }}</span>
           <span class="log-msg">{{ log.msg }}</span>
@@ -288,10 +312,12 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { 
-  startSimulation, 
+import {
+  startSimulation,
   stopSimulation,
-  getRunStatus, 
+  pauseSimulation,
+  resumeSimulation,
+  getRunStatus,
   getRunStatusDetail
 } from '../api/simulation'
 import { generateReport } from '../api/report'
@@ -314,9 +340,13 @@ const router = useRouter()
 
 // State
 const isGeneratingReport = ref(false)
+const logsCollapsed = ref(localStorage.getItem('logsCollapsed') === 'true')
+watch(logsCollapsed, val => localStorage.setItem('logsCollapsed', String(val)))
 const phase = ref(0) // 0: Not started, 1: Running, 2: Completed
 const isStarting = ref(false)
 const isStopping = ref(false)
+const isPausing = ref(false)
+const isPaused = ref(false)
 const startError = ref(null)
 const runStatus = ref({})
 const allActions = ref([]) // All actions (incremental accumulation)
@@ -373,6 +403,8 @@ const resetAllState = () => {
   startError.value = null
   isStarting.value = false
   isStopping.value = false
+  isPausing.value = false
+  isPaused.value = false
   stopPolling()  // Stop any existing polling
 }
 
@@ -459,6 +491,52 @@ const handleStopSimulation = async () => {
   }
 }
 
+// Pause simulation
+const handlePauseSimulation = async () => {
+  if (!props.simulationId || isPausing.value) return
+  isPausing.value = true
+  addLog('Приостановка симуляции...')
+  try {
+    const res = await pauseSimulation({ simulation_id: props.simulationId })
+    if (res.success) {
+      isPaused.value = true
+      addLog('⏸ Симуляция поставлена на паузу')
+    } else {
+      addLog(`Ошибка паузы: ${res.error || 'Неизвестная ошибка'}`)
+    }
+  } catch (err) {
+    addLog(`Ошибка паузы: ${err.message}`)
+  } finally {
+    isPausing.value = false
+  }
+}
+
+// Resume simulation
+const handleResumeSimulation = async () => {
+  if (!props.simulationId || isPausing.value) return
+  isPausing.value = true
+  addLog('Возобновление симуляции...')
+  try {
+    const res = await resumeSimulation({ simulation_id: props.simulationId })
+    if (res.success) {
+      isPaused.value = false
+      addLog('▶ Симуляция возобновлена')
+    } else {
+      addLog(`Ошибка возобновления: ${res.error || 'Неизвестная ошибка'}`)
+    }
+  } catch (err) {
+    addLog(`Ошибка возобновления: ${err.message}`)
+  } finally {
+    isPausing.value = false
+  }
+}
+
+// Stop with confirmation
+const handleStopWithConfirm = async () => {
+  if (!window.confirm('Остановить симуляцию? Это действие необратимо.')) return
+  await handleStopSimulation()
+}
+
 // Polling status
 let statusTimer = null
 let detailTimer = null
@@ -506,6 +584,13 @@ const fetchRunStatus = async () => {
       if (data.reddit_current_round > prevRedditRound.value) {
         addLog(`[Topic Community] R${data.reddit_current_round}/${data.total_rounds} | T:${data.reddit_simulated_hours || 0}h | A:${data.reddit_actions_count}`)
         prevRedditRound.value = data.reddit_current_round
+      }
+
+      // Sync pause state from backend
+      if (data.runner_status === 'paused' && !isPaused.value) {
+        isPaused.value = true
+      } else if (data.runner_status === 'running' && isPaused.value) {
+        isPaused.value = false
       }
 
       // Check if simulation is complete (via runner_status or platform completion status)
@@ -632,7 +717,7 @@ const truncateContent = (content, maxLength = 100) => {
 const formatActionTime = (timestamp) => {
   if (!timestamp) return ''
   try {
-    return new Date(timestamp).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    return new Date(timestamp).toLocaleTimeString('ru-RU', { timeZone: 'Europe/Moscow', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
   } catch {
     return ''
   }
@@ -684,11 +769,42 @@ watch(() => props.systemLogs?.length, () => {
   })
 })
 
-onMounted(() => {
-  addLog('Step3 Simulation initialization')
-  if (props.simulationId) {
-    doStartSimulation()
+onMounted(async () => {
+  addLog('Инициализация шага симуляции')
+  if (!props.simulationId) return
+
+  // Check if simulation is already running in background (e.g. after page refresh)
+  try {
+    const res = await getRunStatus(props.simulationId)
+    if (res.success && res.data) {
+      const status = res.data.runner_status
+      if (status === 'running' || status === 'starting') {
+        addLog('Обнаружена активная симуляция — подключение...')
+        runStatus.value = res.data
+        phase.value = 1
+        startStatusPolling()
+        startDetailPolling()
+        return
+      } else if (status === 'paused') {
+        addLog('Симуляция на паузе — подключение...')
+        runStatus.value = res.data
+        isPaused.value = true
+        phase.value = 1
+        startStatusPolling()
+        startDetailPolling()
+        return
+      } else if (status === 'completed' || status === 'stopped') {
+        addLog('✓ Симуляция уже завершена')
+        runStatus.value = res.data
+        phase.value = 2
+        return
+      }
+    }
+  } catch {
+    // status check failed — proceed to start normally
   }
+
+  doStartSimulation()
 })
 
 onUnmounted(() => {
@@ -895,6 +1011,44 @@ onUnmounted(() => {
 
 .action-btn:disabled {
   opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Simulation control icon buttons (pause/stop) */
+.ctrl-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid #D1D5DB;
+  background: transparent;
+  color: #6B7280;
+  margin-right: 4px;
+}
+
+.ctrl-icon-btn:hover:not(:disabled) {
+  background: #F3F4F6;
+  border-color: #9CA3AF;
+  color: #111;
+}
+
+.ctrl-icon-btn.ctrl-stop {
+  border-color: #FCA5A5;
+  color: #DC2626;
+}
+
+.ctrl-icon-btn.ctrl-stop:hover:not(:disabled) {
+  background: #FEF2F2;
+  border-color: #DC2626;
+}
+
+.ctrl-icon-btn:disabled {
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -1220,12 +1374,27 @@ onUnmounted(() => {
 .log-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   border-bottom: 1px solid #333;
   padding-bottom: 8px;
   margin-bottom: 8px;
   font-size: 10px;
   color: #666;
+  cursor: pointer;
+  user-select: none;
 }
+.log-toggle {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+.log-toggle:hover { color: #aaa; }
+.system-logs.logs-collapsed { padding: 4px 16px; }
+.system-logs.logs-collapsed .log-header { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
 
 .log-content {
   display: flex;

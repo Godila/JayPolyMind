@@ -1,0 +1,16 @@
+# Stage 1: build Vue frontend
+FROM node:20-slim AS builder
+WORKDIR /build
+
+COPY package.json package-lock.json ./
+COPY frontend/package.json frontend/package-lock.json ./frontend/
+RUN npm ci && npm ci --prefix frontend
+
+COPY frontend/ ./frontend/
+COPY package.json ./
+RUN npm run build --prefix frontend
+
+# Stage 2: Caddy serving Vue static files
+FROM caddy:alpine
+COPY --from=builder /build/frontend/dist /srv
+COPY Caddyfile /etc/caddy/Caddyfile

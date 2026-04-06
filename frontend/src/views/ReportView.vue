@@ -15,7 +15,7 @@
             :class="{ active: viewMode === mode }"
             @click="viewMode = mode"
           >
-            {{ { graph: 'Граф', split: 'Разделить', workbench: 'Рабочий стол' }[mode] }}
+            {{ { graph: 'Граф', split: 'Сплит', workbench: 'Рабочий стол' }[mode] }}
           </button>
         </div>
       </div>

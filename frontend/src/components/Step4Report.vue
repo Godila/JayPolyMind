@@ -16,6 +16,9 @@
             <div class="header-divider"></div>
           </div>
 
+          <!-- Report insights charts -->
+          <ReportInsights v-if="reportId && simulationId && isComplete" :report-id="reportId" :simulation-id="simulationId" />
+
           <!-- Sections List -->
           <div class="sections-list">
             <div 
@@ -128,13 +131,23 @@
           </div>
 
           <!-- Next Step Button - Show after completion -->
-          <button v-if="isComplete" class="next-step-btn" @click="goToInteraction">
-            <span>Enter Deep Interaction</span>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-          </button>
+          <div v-if="isComplete" class="completion-actions">
+            <button class="pdf-btn" :disabled="isExportingPDF" @click="exportPDF">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              {{ isExportingPDF ? 'Генерация...' : 'Скачать PDF' }}
+            </button>
+            <button class="next-step-btn" @click="goToInteraction">
+              <span>Перейти к взаимодействию</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
 
           <div class="workflow-divider"></div>
         </div>
@@ -166,11 +179,11 @@
                   <!-- Report Start -->
                   <template v-if="log.action === 'report_start'">
                     <div class="info-row">
-                      <span class="info-key">Simulation</span>
+                      <span class="info-key">Симуляция</span>
                       <span class="info-val mono">{{ log.details?.simulation_id }}</span>
                     </div>
                     <div class="info-row" v-if="log.details?.simulation_requirement">
-                      <span class="info-key">Requirement</span>
+                      <span class="info-key">Задача</span>
                       <span class="info-val">{{ log.details.simulation_requirement }}</span>
                     </div>
                   </template>
@@ -182,7 +195,7 @@
                   <template v-if="log.action === 'planning_complete'">
                     <div class="status-message success">{{ log.details?.message }}</div>
                     <div class="outline-badge" v-if="log.details?.outline">
-                      {{ log.details.outline.sections?.length || 0 }} sections planned
+                      {{ log.details.outline.sections?.length || 0 }} разделов запланировано
                     </div>
                   </template>
 
@@ -307,7 +320,7 @@
                   <!-- LLM Response -->
                   <template v-if="log.action === 'llm_response'">
                     <div class="llm-meta">
-                      <span class="meta-tag">Iteration {{ log.details?.iteration }}</span>
+                      <span class="meta-tag">Итерация {{ log.details?.iteration }}</span>
                       <span class="meta-tag" :class="{ active: log.details?.has_tool_calls }">
                         Инструменты: {{ log.details?.has_tool_calls ? 'Да' : 'Нет' }}
                       </span>
@@ -320,7 +333,7 @@
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="20 6 9 17 4 12"></polyline>
                       </svg>
-                      <span>Section "{{ log.section_title }}" content generated</span>
+                      <span>Секция "{{ log.section_title }}" сформирована</span>
                     </div>
                     <div v-if="expandedLogs.has(log.timestamp) && log.details?.response" class="llm-content">
                       <pre>{{ log.details.response }}</pre>
@@ -334,7 +347,7 @@
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                         <polyline points="22 4 12 14.01 9 11.01"></polyline>
                       </svg>
-                      <span>Report Generation Complete</span>
+                      <span>Отчёт сформирован</span>
                     </div>
                   </template>
                 </div>
@@ -347,17 +360,17 @@
                   <div class="footer-actions">
                     <!-- Tool Call: Show/Hide Params -->
                     <button v-if="log.action === 'tool_call' && log.details?.parameters" class="action-btn" @click.stop="toggleLogExpand(log)">
-                      {{ expandedLogs.has(log.timestamp) ? 'Hide Params' : 'Show Params' }}
+                      {{ expandedLogs.has(log.timestamp) ? 'Скрыть параметры' : 'Показать параметры' }}
                     </button>
-                    
+
                     <!-- Tool Result: Raw/Structured View -->
                     <button v-if="log.action === 'tool_result'" class="action-btn" @click.stop="toggleRawResult(log.timestamp, $event)">
-                      {{ showRawResult[log.timestamp] ? 'Structured View' : 'Raw Output' }}
+                      {{ showRawResult[log.timestamp] ? 'Структурированно' : 'Исходный вывод' }}
                     </button>
-                    
+
                     <!-- LLM Response: Show/Hide Response -->
                     <button v-if="log.action === 'llm_response' && log.details?.response" class="action-btn" @click.stop="toggleLogExpand(log)">
-                      {{ expandedLogs.has(log.timestamp) ? 'Hide Response' : 'Show Response' }}
+                      {{ expandedLogs.has(log.timestamp) ? 'Скрыть ответ' : 'Показать ответ' }}
                     </button>
                   </div>
                 </div>
@@ -368,19 +381,22 @@
           <!-- Empty State -->
           <div v-if="agentLogs.length === 0 && !isComplete" class="workflow-empty">
             <div class="empty-pulse"></div>
-            <span>Waiting for agent activity...</span>
+            <span>Ожидание активности агента...</span>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Bottom Console Logs -->
-    <div class="console-logs">
-      <div class="log-header">
-        <span class="log-title">CONSOLE OUTPUT</span>
-        <span class="log-id">{{ reportId || 'NO_REPORT' }}</span>
+    <div class="console-logs" :class="{ 'logs-collapsed': logsCollapsed }">
+      <div class="log-header" @click="logsCollapsed = !logsCollapsed" style="cursor:pointer">
+        <span class="log-title">КОНСОЛЬ</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="log-id">{{ reportId || 'NO_REPORT' }}</span>
+          <span class="log-collapse-btn">{{ logsCollapsed ? '▲' : '▼' }}</span>
+        </div>
       </div>
-      <div class="log-content" ref="logContent">
+      <div class="log-content" ref="logContent" v-show="!logsCollapsed">
         <div class="log-line" v-for="(log, idx) in consoleLogs" :key="idx">
           <span class="log-msg" :class="getLogLevelClass(log)">{{ log }}</span>
         </div>
@@ -390,9 +406,10 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, h, reactive } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, h, reactive, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAgentLog, getConsoleLog } from '../api/report'
+import ReportInsights from './ReportInsights.vue'
 
 const router = useRouter()
 
@@ -403,6 +420,80 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['add-log', 'update-status'])
+
+// Console collapse (persisted via localStorage, same key as other steps)
+const logsCollapsed = ref(localStorage.getItem('logsCollapsed') === 'true')
+watch(logsCollapsed, val => localStorage.setItem('logsCollapsed', String(val)))
+
+// PDF export
+const isExportingPDF = ref(false)
+const exportPDF = async () => {
+  if (!leftPanel.value || isExportingPDF.value) return
+  isExportingPDF.value = true
+
+  // A4 portrait content width: 210mm - 20mm margins = 190mm ≈ 718px at 96dpi
+  const PDF_WIDTH = 718
+  let container = null
+
+  try {
+    const { default: html2pdf } = await import('html2pdf.js')
+
+    // Step 1: Capture chart canvas data BEFORE cloning (canvases lose content on clone)
+    const canvasDataURLs = []
+    leftPanel.value.querySelectorAll('canvas').forEach(c => {
+      canvasDataURLs.push(c.toDataURL('image/png'))
+    })
+
+    // Step 2: Clone element into an off-screen real DOM container
+    container = document.createElement('div')
+    container.style.cssText = `position:fixed;top:-9999px;left:0;width:${PDF_WIDTH}px;background:#fff;z-index:-1`
+    document.body.appendChild(container)
+
+    const clone = leftPanel.value.cloneNode(true)
+    container.appendChild(clone)
+
+    // Step 3: Apply print styles to clone
+    clone.style.cssText = `width:${PDF_WIDTH}px!important;max-width:${PDF_WIDTH}px!important;` +
+      'overflow:visible!important;background:#fff!important;' +
+      'padding:28px 32px 48px!important;position:static!important;' +
+      'box-shadow:none!important;border:none!important;flex:none!important'
+
+    clone.querySelectorAll('.report-content-wrapper,.insights-section').forEach(n => {
+      n.style.cssText += ';max-width:none!important;width:100%!important'
+    })
+    clone.querySelectorAll('.completion-actions,.header-actions,.pdf-btn,.go-interaction-btn').forEach(n => {
+      n.style.display = 'none'
+    })
+    const grid = clone.querySelector('.charts-grid')
+    if (grid) { grid.style.display = 'grid'; grid.style.gridTemplateColumns = '1fr 1fr' }
+
+    // Step 4: Replace blank canvases in clone with captured images
+    clone.querySelectorAll('canvas').forEach((canvas, i) => {
+      if (!canvasDataURLs[i]) return
+      const img = document.createElement('img')
+      img.src = canvasDataURLs[i]
+      img.style.cssText = 'width:100%;height:auto;display:block'
+      canvas.parentNode.replaceChild(img, canvas)
+    })
+
+    // Step 5: Wait for layout to settle
+    await nextTick()
+    await new Promise(r => setTimeout(r, 150))
+
+    // Step 6: Capture and export
+    await html2pdf().set({
+      margin: [10, 10, 10, 10],
+      filename: `report-${props.reportId || 'simulation'}.pdf`,
+      image: { type: 'jpeg', quality: 0.93 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(clone).save()
+
+  } finally {
+    if (container) document.body.removeChild(container)
+    isExportingPDF.value = false
+  }
+}
 
 // Navigation
 const goToInteraction = () => {
@@ -1708,9 +1799,9 @@ const statusClass = computed(() => {
 })
 
 const statusText = computed(() => {
-  if (isComplete.value) return 'Completed'
-  if (agentLogs.value.length > 0) return 'Generating...'
-  return 'Waiting'
+  if (isComplete.value) return 'Завершено'
+  if (agentLogs.value.length > 0) return 'Генерация...'
+  return 'Ожидание'
 })
 
 const totalSections = computed(() => {
@@ -1787,9 +1878,9 @@ const workflowSteps = computed(() => {
   steps.push({
     key: 'planning',
     noLabel: 'PL',
-    title: 'Planning / Outline',
+    title: 'Планирование',
     status: planningStatus,
-    meta: planningStatus === 'active' ? 'IN PROGRESS' : ''
+    meta: planningStatus === 'active' ? 'В ПРОЦЕССЕ' : ''
   })
 
   // Sections (if outline exists)
@@ -1805,7 +1896,7 @@ const workflowSteps = computed(() => {
       noLabel: String(idx).padStart(2, '0'),
       title: section.title,
       status,
-      meta: status === 'active' ? 'IN PROGRESS' : ''
+      meta: status === 'active' ? 'В ПРОЦЕССЕ' : ''
     })
   })
 
@@ -1814,9 +1905,9 @@ const workflowSteps = computed(() => {
   steps.push({
     key: 'complete',
     noLabel: 'OK',
-    title: 'Complete',
+    title: 'Завершено',
     status: completeStatus,
-    meta: completeStatus === 'active' ? 'FINALIZING' : ''
+    meta: completeStatus === 'active' ? 'ФИНАЛИЗАЦИЯ' : ''
   })
 
   return steps
@@ -1991,16 +2082,16 @@ const getConnectorClass = (log, idx, total) => {
 
 const getActionLabel = (action) => {
   const labels = {
-    'report_start': 'Report Started',
-    'planning_start': 'Planning',
-    'planning_complete': 'Plan Complete',
-    'section_start': 'Section Start',
-    'section_content': 'Content Ready',
-    'section_complete': 'Section Done',
-    'tool_call': 'Tool Call',
-    'tool_result': 'Tool Result',
-    'llm_response': 'LLM Response',
-    'report_complete': 'Complete'
+    'report_start': 'Отчёт запущен',
+    'planning_start': 'Планирование',
+    'planning_complete': 'План готов',
+    'section_start': 'Раздел: начало',
+    'section_content': 'Контент готов',
+    'section_complete': 'Раздел готов',
+    'tool_call': 'Вызов инструмента',
+    'tool_result': 'Результат инструмента',
+    'llm_response': 'Ответ модели',
+    'report_complete': 'Отчёт завершён'
   }
   return labels[action] || action
 }
@@ -3397,13 +3488,47 @@ watch(() => props.reportId, (newId) => {
   font-size: 14px;
 }
 
+.completion-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 20px 0 20px;
+}
+
+.pdf-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  background: transparent;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pdf-btn:hover:not(:disabled) {
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+.pdf-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .next-step-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: calc(100% - 40px);
-  margin: 4px 20px 0 20px;
+  width: 100%;
+  margin: 0;
   padding: 14px 20px;
   font-size: 14px;
   font-weight: 600;
@@ -5107,6 +5232,21 @@ watch(() => props.reportId, (newId) => {
   flex-shrink: 0;
 }
 
+.console-logs.logs-collapsed {
+  padding: 0 16px;
+}
+
+.console-logs.logs-collapsed .log-header {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.log-collapse-btn {
+  font-size: 9px;
+  opacity: 0.5;
+}
+
 .log-header {
   display: flex;
   justify-content: space-between;
@@ -5148,3 +5288,4 @@ watch(() => props.reportId, (newId) => {
 .log-msg.warning { color: #FFA726; }
 .log-msg.success { color: #66BB6A; }
 </style>
+

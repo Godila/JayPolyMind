@@ -172,8 +172,8 @@
                     </svg>
                   </div>
                   <div class="tool-content">
-                    <div class="tool-name">InsightForge Deep Attribution</div>
-                    <div class="tool-desc">Aligns real-world seed data with simulation environment state, combines Global/Local Memory mechanisms, provides cross-temporal deep attribution analysis</div>
+                    <div class="tool-name">InsightForge — Глубокая атрибуция</div>
+                    <div class="tool-desc">Сопоставляет реальные данные с состоянием симуляции, задействует механизмы глобальной и локальной памяти для кросс-временного анализа причинно-следственных связей</div>
                   </div>
                 </div>
                 <div class="tool-item tool-blue">
@@ -184,8 +184,8 @@
                     </svg>
                   </div>
                   <div class="tool-content">
-                    <div class="tool-name">PanoramaSearch Panoramic Tracking</div>
-                    <div class="tool-desc">Graph-based breadth-first traversal algorithm, reconstructs event propagation paths, captures full information flow topology</div>
+                    <div class="tool-name">PanoramaSearch — Панорамный поиск</div>
+                    <div class="tool-desc">Обход графа в ширину — восстанавливает пути распространения событий и фиксирует полную топологию информационных потоков</div>
                   </div>
                 </div>
                 <div class="tool-item tool-orange">
@@ -195,8 +195,8 @@
                     </svg>
                   </div>
                   <div class="tool-content">
-                    <div class="tool-name">QuickSearch Fast Retrieval</div>
-                    <div class="tool-desc">GraphRAG-based instant query interface, optimized indexing efficiency, for quickly extracting node attributes and discrete facts</div>
+                    <div class="tool-name">QuickSearch — Быстрый поиск</div>
+                    <div class="tool-desc">Мгновенный интерфейс запросов на базе GraphRAG — для быстрого извлечения атрибутов узлов и отдельных фактов</div>
                   </div>
                 </div>
                 <div class="tool-item tool-green">
@@ -662,10 +662,10 @@ const sendMessage = async () => {
       await sendToAgent(message)
     }
   } catch (err) {
-    addLog(`Send failed: ${err.message}`)
+    addLog(`Ошибка отправки: ${err.message}`)
     chatHistory.value.push({
       role: 'assistant',
-      content: `Sorry, an error occurred: ${err.message}`,
+      content: `Произошла ошибка: ${err.message}`,
       timestamp: new Date().toISOString()
     })
   } finally {
@@ -697,7 +697,7 @@ const sendToReportAgent = async (message) => {
   if (res.success && res.data) {
     chatHistory.value.push({
       role: 'assistant',
-      content: res.data.response || res.data.answer || 'No response',
+      content: res.data.response || res.data.answer || 'Нет ответа',
       timestamp: new Date().toISOString()
     })
     addLog('Report Agent replied')
@@ -708,7 +708,7 @@ const sendToReportAgent = async (message) => {
 
 const sendToAgent = async (message) => {
   if (!selectedAgent.value || selectedAgentIndex.value === null) {
-    throw new Error('Please select a simulated individual first')
+    throw new Error('Выберите агента из симуляции')
   }
 
   addLog(`Send to ${selectedAgent.value.username}: ${message.substring(0, 50)}...`)
@@ -719,7 +719,7 @@ const sendToAgent = async (message) => {
     const historyContext = chatHistory.value
       .filter(msg => msg.content !== message)
       .slice(-6)
-      .map(msg => `${msg.role === 'user' ? 'Questioner' : 'You'}: ${msg.content}`)
+      .map(msg => `${msg.role === 'user' ? 'Вопрос' : 'Агент'}: ${msg.content}`)
       .join('\n')
     prompt = `Here is our previous conversation:\n${historyContext}\n\nNow my new question is: ${message}`
   }
@@ -837,13 +837,13 @@ const submitSurvey = async () => {
           const twitterKey = `twitter_${agentIdx}`
           const agentResult = resultsDict[redditKey] || resultsDict[twitterKey]
           if (agentResult) {
-            responseContent = agentResult.response || agentResult.answer || 'No response'
+            responseContent = agentResult.response || agentResult.answer || 'Нет ответа'
           }
         } else if (Array.isArray(resultsDict)) {
           // Compatible with array format
           const matchedResult = resultsDict.find(r => r.agent_id === agentIdx)
           if (matchedResult) {
-            responseContent = matchedResult.response || matchedResult.answer || 'No response'
+            responseContent = matchedResult.response || matchedResult.answer || 'Нет ответа'
           }
         }
 

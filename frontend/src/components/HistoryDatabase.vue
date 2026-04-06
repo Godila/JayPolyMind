@@ -353,8 +353,8 @@ const formatSimulationId = (simulationId) => {
 const formatRounds = (simulation) => {
   const current = simulation.current_round || 0
   const total = simulation.total_rounds || 0
-  if (total === 0) return 'Not Started'
-  return `${current}/${total} rounds`
+  if (total === 0) return 'Не начато'
+  return `${current}/${total} раундов`
 }
 
 // Get file type (for styling)
@@ -575,7 +575,9 @@ onUnmounted(() => {
   width: 100%;
   min-height: 280px;
   margin-top: 40px;
-  padding: 35px 0 40px;
+  padding: 35px 40px 40px;
+  background: #ffffff;
+  border-radius: 16px 16px 0 0;
   overflow: visible;
 }
 

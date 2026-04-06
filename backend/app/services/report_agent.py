@@ -586,7 +586,7 @@ Please output the report outline in JSON format as follows:
 }
 
 Note: sections array must have at least 2 and at most 5 elements!
-IMPORTANT: The entire report outline (title, summary, section titles and descriptions) MUST be written in Russian."""
+IMPORTANT: The entire report outline (title, summary, section titles and descriptions) MUST be written in Russian. Use natural Russian language — avoid anglicisms and transliterations (e.g. use "системные риски" not "эмерджентные риски", "ключевые тенденции" not "тренды" etc.)."""
 
 PLAN_USER_PROMPT_TEMPLATE = """\
 [Prediction Scenario Settings]
@@ -658,6 +658,7 @@ Your task is to:
    - Keep original meaning unchanged during translation, ensure natural expression
    - This rule applies to both body text and quoted content (> format)
    - Write ONLY in Russian throughout the entire report
+   - Use natural literary Russian — avoid anglicisms and transliterations (e.g. "системные риски" not "эмерджентные риски", "тенденции" not "тренды", "непредвиденные" not "форс-мажорные")
 
 4. [Faithfully Present Prediction Results]
    - Report content must reflect simulation results that represent the future in the simulated world
@@ -1727,14 +1728,17 @@ class ReportAgent:
             
             # savefinalReport
             ReportManager.save_report(report)
+            # Extract structured metrics before marking completed (avoids race condition)
+            self.extract_metrics(report_id, report.markdown_content)
+
             ReportManager.update_progress(
                 report_id, "completed", 100, "reportgeneratecomplete",
                 completed_sections=completed_section_titles
             )
-            
+
             if progress_callback:
                 progress_callback("completed", 100, "reportgeneratecomplete")
-            
+
             logger.info(f"reportgeneratecomplete: {report_id}")
             
             # Closeconsoleloglogger
@@ -1770,8 +1774,60 @@ class ReportAgent:
             
             return report
     
+    def extract_metrics(self, report_id: str, markdown_content: str) -> None:
+        """
+        Extract structured analytical metrics from completed report text via LLM.
+        Saves result to metrics.json in the report folder.
+        Non-critical — failure is logged but does not affect the report.
+        """
+        try:
+            prompt = (
+                "На основе следующего отчёта о симуляции извлеки структурированные данные в JSON.\n"
+                "Верни ТОЛЬКО валидный JSON без markdown-разметки, без ```json и ```.\n\n"
+                "Схема ответа:\n"
+                "{\n"
+                '  "actor_positions": [\n'
+                '    {"name": "Название актора", "stance": число_от_минус10_до_10, '
+                '"label": "За|Против|Нейтральный", "role": "краткая роль"}\n'
+                "  ],\n"
+                '  "outcome_scenarios": [\n'
+                '    {"name": "Название сценария", "probability": число_0_до_100}\n'
+                "  ],\n"
+                '  "key_themes": [\n'
+                '    {"name": "Название темы", "intensity": число_1_до_10, '
+                '"sentiment": "positive|negative|neutral"}\n'
+                "  ]\n"
+                "}\n\n"
+                "Правила:\n"
+                "- actor_positions: stance от -10 (активно против) до +10 (активно за). "
+                "Только реальные акторы из отчёта. 3-7 акторов.\n"
+                "- outcome_scenarios: 2-4 сценария. Сумма probability = 100.\n"
+                "- key_themes: 3-6 ключевых тем или противоречий из отчёта.\n\n"
+                "Отчёт:\n" + markdown_content[:6000]
+            )
+
+            response = self.llm.chat_json(
+                messages=[
+                    {"role": "system", "content": "Ты аналитик. Извлеки структурированные данные из отчёта. Верни только JSON."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.1
+            )
+
+            if not isinstance(response, dict):
+                raise ValueError(f"LLM returned non-dict: {type(response)}")
+
+            metrics_path = os.path.join(ReportManager._get_report_folder(report_id), 'metrics.json')
+            with open(metrics_path, 'w', encoding='utf-8') as f:
+                json.dump(response, f, ensure_ascii=False, indent=2)
+
+            logger.info(f"Metrics extracted and saved: {report_id}")
+
+        except Exception as e:
+            logger.warning(f"Failed to extract metrics for report {report_id}: {e}")
+
     def chat(
-        self, 
+        self,
         message: str,
         chat_history: List[Dict[str, str]] = None
     ) -> Dict[str, Any]:
