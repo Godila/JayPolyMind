@@ -16,8 +16,8 @@
     <!-- Body -->
     <div class="form-body">
 
-      <!-- ── Dry Test banner (always visible) ────────────────────────────── -->
-      <div class="dry-test-banner">
+      <!-- ── Dry Test banner (custom scenario only) ─────────────────────── -->
+      <div v-if="scenario.id === 'custom'" class="dry-test-banner">
         <div class="dry-test-left">
           <span class="dry-test-icon">⚡</span>
           <div>
@@ -36,8 +36,8 @@
         </button>
       </div>
 
-      <!-- ── Demo banner (demo users only) ─────────────────────────────── -->
-      <div v-if="isDemoUser && scenario.demo" class="demo-banner">
+      <!-- ── Demo banner (all users, industry scenarios) ──────────────── -->
+      <div v-if="scenario.demo" class="demo-banner">
         <div class="demo-banner-left">
           <span class="demo-icon">🎭</span>
           <div>
