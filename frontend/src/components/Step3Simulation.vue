@@ -285,7 +285,7 @@
 
         <div v-if="allActions.length === 0" class="waiting-state">
           <div class="pulse-ring"></div>
-          <span>Waiting for agent actions...</span>
+          <span>Ожидание действий агентов...</span>
         </div>
       </div>
     </div>
@@ -717,7 +717,7 @@ const truncateContent = (content, maxLength = 100) => {
 const formatActionTime = (timestamp) => {
   if (!timestamp) return ''
   try {
-    return new Date(timestamp).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    return new Date(timestamp).toLocaleTimeString('ru-RU', { timeZone: 'Europe/Moscow', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
   } catch {
     return ''
   }

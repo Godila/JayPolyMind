@@ -43,7 +43,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import {
   Chart,
   LineController, BarController, DoughnutController,
@@ -233,15 +233,15 @@ onMounted(async () => {
     const res = await getSimulationAnalytics(props.simulationId)
     if (res.success && res.data) {
       analyticsData.value = res.data
-      // Wait for canvases to mount
-      await new Promise(r => setTimeout(r, 50))
+      loading.value = false       // Must be before buildCharts so v-else-if renders canvases
+      await nextTick()            // Wait for DOM to update with canvas elements
       buildCharts(res.data)
     } else {
       error.value = true
+      loading.value = false
     }
   } catch {
     error.value = true
-  } finally {
     loading.value = false
   }
 })
