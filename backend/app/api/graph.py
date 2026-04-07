@@ -527,6 +527,17 @@ def build_graph():
                                     linked = True
                                 else:
                                     build_logger.debug(f"[{task_id}] Entity not found for linking: '{entity_name}'")
+
+                            # Fallback: if no links made, try matching all graph entities against the fact text
+                            if not linked:
+                                fact_lower = finding.get('fact', '').lower()
+                                all_nodes = storage.get_all_nodes(graph_id)
+                                for node in all_nodes:
+                                    node_name = node.get('name', '')
+                                    if node_name and len(node_name) > 2 and node_name.lower() in fact_lower:
+                                        storage.link_entity_to_citation(node['uuid'], cit_uuid)
+                                        build_logger.info(f"[{task_id}] Fallback linked citation to entity '{node_name}'")
+                                        linked = True
                             citation_count += 1
                         except Exception as ce:
                             build_logger.warning(f"[{task_id}] Failed to create citation: {ce}")

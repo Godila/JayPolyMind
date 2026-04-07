@@ -606,21 +606,18 @@ class Neo4jStorage(GraphStorage):
                     seen_cit_uuids.add(cit_uuid)
                     citations.append({
                         "uuid": cit_uuid,
+                        "name": c.get("name", "") or c.get("source_title", "") or c.get("fact", "")[:50],
                         "fact": c.get("fact", ""),
                         "source_url": c.get("source_url", ""),
                         "source_title": c.get("source_title", ""),
                         "confidence": c.get("confidence", "unverified"),
+                        "labels": ["Citation"],
                         "type": "Citation",
                     })
                 if record["entity_uuid"]:
                     citation_edges.append({
-                        "source_node_uuid": record["entity_uuid"],
-                        "target_node_uuid": cit_uuid,
-                        "name": "SOURCED_FROM",
-                        "fact": c.get("fact", ""),
-                        "source_node_name": record["entity_name"] or "",
-                        "target_node_name": c.get("source_title", ""),
-                        "type": "SOURCED_FROM",
+                        "entity_uuid": record["entity_uuid"],
+                        "citation_uuid": cit_uuid,
                     })
 
             return {
