@@ -49,7 +49,7 @@
       <!-- Right Panel: Step Components -->
       <div class="panel-wrapper right" :style="rightPanelStyle">
         <!-- Step 1: Graph Build -->
-        <Step1GraphBuild 
+        <Step1GraphBuild
           v-if="currentStep === 1"
           :currentPhase="currentPhase"
           :projectData="projectData"
@@ -57,7 +57,12 @@
           :buildProgress="buildProgress"
           :graphData="graphData"
           :systemLogs="systemLogs"
+          :researchState="researchState"
+          :researchFindings="researchFindings"
           @next-step="handleNextStep"
+          @research-confirm="handleResearchConfirm"
+          @research-skip="handleResearchSkip"
+          @research-toggle="toggleFinding"
         />
         <!-- Step 2: Env Setup -->
         <Step2EnvSetup
@@ -80,7 +85,7 @@ import { useRoute, useRouter } from 'vue-router'
 import GraphPanel from '../components/GraphPanel.vue'
 import Step1GraphBuild from '../components/Step1GraphBuild.vue'
 import Step2EnvSetup from '../components/Step2EnvSetup.vue'
-import { generateOntology, getProject, buildGraph, getTaskStatus, getGraphData } from '../api/graph'
+import { generateOntology, getProject, buildGraph, getTaskStatus, getGraphData, confirmResearch, skipResearch } from '../api/graph'
 import { getPendingUpload, clearPendingUpload } from '../store/pendingUpload'
 
 const route = useRoute()
@@ -105,9 +110,15 @@ const ontologyProgress = ref(null)
 const buildProgress = ref(null)
 const systemLogs = ref([])
 
+// Research State (separate from currentPhase to avoid breaking numeric comparisons)
+const researchState = ref('idle') // idle | running | review | confirmed | skipped | error
+const researchFindings = ref([])
+const researchTaskId = ref(null)
+
 // Polling timers
 let pollTimer = null
 let graphPollTimer = null
+let researchPollTimer = null
 
 // --- Computed Layout Styles ---
 const leftPanelStyle = computed(() => {
@@ -132,6 +143,8 @@ const statusClass = computed(() => {
 const statusText = computed(() => {
   if (error.value) return 'Ошибка'
   if (currentPhase.value >= 2) return 'Готово'
+  if (researchState.value === 'running') return 'Deep Research...'
+  if (researchState.value === 'review') return 'Проверка результатов'
   if (currentPhase.value === 1) return 'Построение графа'
   if (currentPhase.value === 0) return 'Генерация онтологии'
   return 'Инициализация'
@@ -209,11 +222,20 @@ const handleNewProject = async () => {
       clearPendingUpload()
       currentProjectId.value = res.data.project_id
       projectData.value = res.data
-      
+
       router.replace({ name: 'Process', params: { projectId: res.data.project_id } })
       ontologyProgress.value = null
-      addLog(`Ontology generated successfully for project ${res.data.project_id}`)
-      await startBuildGraph()
+
+      // Check if research was started (async deep research v2)
+      if (res.data.status === 'researching' && res.data.research_task_id) {
+        researchState.value = 'running'
+        researchTaskId.value = res.data.research_task_id
+        addLog('Deep Research started. Polling for results...')
+        startResearchPolling(res.data.research_task_id)
+      } else {
+        addLog(`Ontology generated successfully for project ${res.data.project_id}`)
+        await startBuildGraph()
+      }
     } else {
       error.value = res.error || 'Ontology generation failed'
       addLog(`Error generating ontology: ${error.value}`)
@@ -236,7 +258,12 @@ const loadProject = async () => {
       updatePhaseByStatus(res.data.status)
       addLog(`Project loaded. Status: ${res.data.status}`)
       
-      if (res.data.status === 'ontology_generated' && !res.data.graph_id) {
+      if (res.data.status === 'researching' && res.data.research_task_id) {
+        researchState.value = 'running'
+        researchTaskId.value = res.data.research_task_id
+        addLog('Resuming deep research polling...')
+        startResearchPolling(res.data.research_task_id)
+      } else if (res.data.status === 'ontology_generated' && !res.data.graph_id) {
         await startBuildGraph()
       } else if (res.data.status === 'graph_building' && res.data.graph_build_task_id) {
         currentPhase.value = 1
@@ -262,6 +289,7 @@ const updatePhaseByStatus = (status) => {
   switch (status) {
     case 'created':
     case 'ontology_generated': currentPhase.value = 0; break;
+    case 'researching': currentPhase.value = 0; break;
     case 'graph_building': currentPhase.value = 1; break;
     case 'graph_completed': currentPhase.value = 2; break;
     case 'failed': error.value = 'Project failed'; break;
@@ -379,6 +407,100 @@ const refreshGraph = () => {
   }
 }
 
+// --- Research Polling & Handlers ---
+
+const startResearchPolling = (taskId) => {
+  pollResearchStatus(taskId)
+  researchPollTimer = setInterval(() => pollResearchStatus(taskId), 2000)
+}
+
+const pollResearchStatus = async (taskId) => {
+  try {
+    const res = await getTaskStatus(taskId)
+    if (!res.success) return
+
+    const task = res.data
+    if (task.message) {
+      addLog(task.message)
+    }
+
+    if (task.status === 'completed') {
+      stopResearchPolling()
+      const findings = task.result?.findings || []
+      researchFindings.value = findings.map(f => ({ ...f, enabled: true }))
+      researchState.value = 'review'
+      addLog(`Deep Research complete: ${findings.length} findings. Review and confirm.`)
+    } else if (task.status === 'failed') {
+      stopResearchPolling()
+      researchState.value = 'error'
+      addLog(`Deep Research failed: ${task.error}`)
+    }
+  } catch (e) {
+    console.error('Research poll error:', e)
+  }
+}
+
+const stopResearchPolling = () => {
+  if (researchPollTimer) {
+    clearInterval(researchPollTimer)
+    researchPollTimer = null
+  }
+}
+
+const handleResearchConfirm = async () => {
+  const confirmedIds = researchFindings.value
+    .filter(f => f.enabled)
+    .map(f => f.id)
+
+  if (confirmedIds.length === 0) {
+    // No findings enabled -- treat as skip
+    return handleResearchSkip()
+  }
+
+  try {
+    addLog(`Confirming ${confirmedIds.length} research findings...`)
+    researchState.value = 'confirmed'
+    const res = await confirmResearch(currentProjectId.value, confirmedIds)
+    if (res.success) {
+      projectData.value = { ...projectData.value, ...res.data }
+      addLog('Ontology generated with research context. Starting graph build...')
+      await startBuildGraph()
+    } else {
+      error.value = res.error || 'Research confirm failed'
+      addLog(`Error confirming research: ${error.value}`)
+    }
+  } catch (err) {
+    error.value = err.message
+    researchState.value = 'error'
+    addLog(`Exception in confirmResearch: ${err.message}`)
+  }
+}
+
+const handleResearchSkip = async () => {
+  try {
+    addLog('Skipping research, generating ontology without web context...')
+    researchState.value = 'skipped'
+    const res = await skipResearch(currentProjectId.value)
+    if (res.success) {
+      projectData.value = { ...projectData.value, ...res.data }
+      addLog('Ontology generated without research. Starting graph build...')
+      await startBuildGraph()
+    } else {
+      error.value = res.error || 'Research skip failed'
+      addLog(`Error skipping research: ${error.value}`)
+    }
+  } catch (err) {
+    error.value = err.message
+    researchState.value = 'error'
+    addLog(`Exception in skipResearch: ${err.message}`)
+  }
+}
+
+const toggleFinding = (findingId) => {
+  const f = researchFindings.value.find(x => x.id === findingId)
+  if (f) f.enabled = !f.enabled
+}
+
 const stopPolling = () => {
   if (pollTimer) {
     clearInterval(pollTimer)
@@ -401,6 +523,7 @@ onMounted(() => {
 onUnmounted(() => {
   stopPolling()
   stopGraphPolling()
+  stopResearchPolling()
 })
 </script>
 

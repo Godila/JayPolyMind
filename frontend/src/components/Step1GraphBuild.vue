@@ -88,14 +88,80 @@
             </div>
           </div>
 
-          <!-- Deep Research Citations -->
-          <div v-if="projectData?.research?.citations?.length" class="tags-container" :class="{ 'dimmed': selectedOntologyItem }">
-            <span class="tag-label">DEEP RESEARCH <span style="color: #A78BFA;">({{ projectData.research.citations.length }} sources)</span></span>
-            <div class="citations-list">
-              <div v-for="(cite, idx) in projectData.research.citations.slice(0, 5)" :key="idx" class="citation-item">
-                <span class="citation-fact">{{ cite.fact }}</span>
-                <a v-if="cite.source_url" :href="cite.source_url" target="_blank" rel="noopener" class="citation-link">{{ cite.source_title || 'source' }}</a>
+          <!-- Deep Research v2 Card -->
+          <div v-if="researchState !== 'idle'" class="research-card" :class="'research-' + researchState">
+
+            <!-- Running state -->
+            <div v-if="researchState === 'running'" class="research-running">
+              <div class="research-header">
+                <span class="research-icon">
+                  <span class="spinner-sm"></span>
+                </span>
+                <span class="research-title">Deep Research</span>
+                <span class="research-badge running">Searching...</span>
               </div>
+              <p class="research-desc">Web search in progress. Typically takes 60-90 seconds.</p>
+            </div>
+
+            <!-- Review state -->
+            <div v-else-if="researchState === 'review'" class="research-review">
+              <div class="research-header">
+                <span class="research-title">Deep Research</span>
+                <span class="research-badge review">{{ enabledCount }}/{{ researchFindings.length }} selected</span>
+              </div>
+              <p class="research-desc">Toggle off irrelevant findings before confirming.</p>
+              <div class="findings-list">
+                <div
+                  v-for="finding in researchFindings"
+                  :key="finding.id"
+                  class="finding-item"
+                  :class="{ disabled: !finding.enabled }"
+                >
+                  <div class="finding-left" :class="'confidence-' + finding.confidence"></div>
+                  <div class="finding-body">
+                    <span class="finding-fact">{{ finding.fact }}</span>
+                    <span class="finding-source">{{ finding.source_title || finding.source_url }}</span>
+                  </div>
+                  <button class="finding-toggle" @click="emit('research-toggle', finding.id)">
+                    {{ finding.enabled ? 'ON' : 'OFF' }}
+                  </button>
+                </div>
+              </div>
+              <div class="research-actions">
+                <button class="action-btn research-confirm-btn" @click="emit('research-confirm')">
+                  Confirm {{ enabledCount }} findings
+                </button>
+                <button class="research-skip-link" @click="emit('research-skip')">
+                  Skip research
+                </button>
+              </div>
+            </div>
+
+            <!-- Confirmed state -->
+            <div v-else-if="researchState === 'confirmed'" class="research-done">
+              <div class="research-header">
+                <span class="research-title">Deep Research</span>
+                <span class="research-badge confirmed">Confirmed</span>
+              </div>
+              <p class="research-desc">{{ enabledCount }} findings applied to ontology generation.</p>
+            </div>
+
+            <!-- Skipped state -->
+            <div v-else-if="researchState === 'skipped'" class="research-done">
+              <div class="research-header">
+                <span class="research-title">Deep Research</span>
+                <span class="research-badge skipped">Skipped</span>
+              </div>
+              <p class="research-desc">Ontology generated without web research context.</p>
+            </div>
+
+            <!-- Error state -->
+            <div v-else-if="researchState === 'error'" class="research-done">
+              <div class="research-header">
+                <span class="research-title">Deep Research</span>
+                <span class="research-badge error">Error</span>
+              </div>
+              <p class="research-desc">Research failed. Ontology will be generated without web context.</p>
             </div>
           </div>
 
@@ -213,10 +279,14 @@ const props = defineProps({
   ontologyProgress: Object,
   buildProgress: Object,
   graphData: Object,
-  systemLogs: { type: Array, default: () => [] }
+  systemLogs: { type: Array, default: () => [] },
+  researchState: { type: String, default: 'idle' },
+  researchFindings: { type: Array, default: () => [] },
 })
 
-defineEmits(['next-step'])
+const emit = defineEmits(['next-step', 'research-confirm', 'research-skip', 'research-toggle'])
+
+const enabledCount = computed(() => props.researchFindings.filter(f => f.enabled).length)
 
 const selectedOntologyItem = ref(null)
 const logContent = ref(null)
@@ -584,41 +654,152 @@ watch(() => props.systemLogs.length, () => {
     color: #BBB;
 }
 
-/* Deep Research Citations */
-.citations-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+/* Deep Research v2 Card */
+.research-card {
+  margin-top: 16px;
+  padding: 16px;
+  background: #FFF;
+  border: 1px solid #EAEAEA;
+  border-radius: 6px;
 }
 
-.citation-item {
+.research-card.research-running {
+  border-color: #FF5722;
+  background: #FFF8F6;
+}
+
+.research-card.research-review {
+  border-color: #FF5722;
+}
+
+.research-header {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 11px;
-  padding: 6px 8px;
-  background: #F9F5FF;
-  border: 1px solid #EDE9FE;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.research-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: #000;
+}
+
+.research-badge {
+  font-size: 10px;
+  padding: 2px 8px;
   border-radius: 4px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
 }
 
-.citation-fact {
-  color: #444;
-  flex: 1;
+.research-badge.running { background: #FF5722; color: #FFF; }
+.research-badge.review { background: #FFF3E0; color: #E65100; }
+.research-badge.confirmed { background: #E8F5E9; color: #2E7D32; }
+.research-badge.skipped { background: #F5F5F5; color: #999; }
+.research-badge.error { background: #FFEBEE; color: #C62828; }
+
+.research-desc {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 12px;
   line-height: 1.4;
 }
 
-.citation-link {
-  color: #7C3AED;
-  text-decoration: none;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  flex-shrink: 0;
-  white-space: nowrap;
+.findings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: 16px;
 }
 
-.citation-link:hover {
+.finding-item {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  padding: 8px;
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 4px;
+  transition: opacity 0.2s;
+}
+
+.finding-item.disabled {
+  opacity: 0.4;
+}
+
+.finding-left {
+  width: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.finding-left.confidence-confirmed { background: #4CAF50; }
+.finding-left.confidence-unverified { background: #FF9800; }
+.finding-left.confidence-contradicted { background: #F44336; }
+
+.finding-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.finding-fact {
+  font-size: 11px;
+  color: #333;
+  line-height: 1.4;
+}
+
+.finding-source {
+  font-size: 10px;
+  color: #999;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.finding-toggle {
+  align-self: center;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  background: none;
+  border: 1px solid #DDD;
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.finding-toggle:hover {
+  border-color: #999;
+  color: #000;
+}
+
+.research-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.research-confirm-btn {
+  flex: 1;
+}
+
+.research-skip-link {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 11px;
+  cursor: pointer;
   text-decoration: underline;
+  flex-shrink: 0;
+}
+
+.research-skip-link:hover {
+  color: #666;
 }
 
 /* Step 02 Stats */

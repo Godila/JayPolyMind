@@ -50,13 +50,19 @@ class NERExtractor:
         self.llm = llm_client or LLMClient()
         self.max_retries = max_retries
 
-    def extract(self, text: str, ontology: Dict[str, Any]) -> Dict[str, Any]:
+    def extract(
+        self,
+        text: str,
+        ontology: Dict[str, Any],
+        research_facts: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
         """
         Extract entities and relations from text, guided by ontology.
 
         Args:
             text: Input text chunk
             ontology: Dict with 'entity_types' and 'relation_types' from graph
+            research_facts: Optional verified facts from web research to guide extraction
 
         Returns:
             Dict with 'entities' and 'relations' lists:
@@ -70,6 +76,18 @@ class NERExtractor:
 
         ontology_desc = self._format_ontology(ontology)
         system_msg = _SYSTEM_PROMPT.format(ontology_description=ontology_desc)
+
+        # Inject research facts into system prompt
+        if research_facts:
+            facts_text = "\n".join(f"- {fact}" for fact in research_facts)
+            system_msg += f"""
+
+VERIFIED FACTS FROM WEB RESEARCH:
+{facts_text}
+
+Extract entities mentioned in these facts even if the document reference is indirect.
+Prefer verified facts over ambiguous document interpretations."""
+
         user_msg = _USER_PROMPT.format(text=text.strip())
 
         messages = [

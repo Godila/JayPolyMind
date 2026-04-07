@@ -221,24 +221,40 @@ def generate_ontology():
 
         # --- Deep Research (optional web grounding) ---
         enable_research = request.form.get('enable_research', '').lower()
-        if enable_research == 'true' or (enable_research == '' and Config.DEEP_RESEARCH_ENABLED):
+        if enable_research == 'true':
             try:
                 from ..services.deep_research import DeepResearchService
-                logger.info("Deep Research enabled, starting web search grounding...")
+                logger.info("Deep Research v2 enabled, starting async research task...")
                 researcher = DeepResearchService()
-                research_result = researcher.research(
-                    document_texts=document_texts,
-                    simulation_requirement=simulation_requirement,
+
+                task_manager = TaskManager()
+                research_task_id = task_manager.create_task("Deep Research")
+                project.research_task_id = research_task_id
+                project.status = ProjectStatus.RESEARCHING
+                ProjectManager.save_project(project)
+
+                # Start background research thread
+                thread = threading.Thread(
+                    target=researcher.research_iterative,
+                    args=(document_texts, simulation_requirement, research_task_id, task_manager),
+                    daemon=True,
                 )
-                if research_result.enriched_context:
-                    research_context = f"\n\n## Web Research Findings\n\n{research_result.enriched_context}"
-                    additional_context = (additional_context or '') + research_context
-                project.research_citations = research_result.citations
-                project.research_queries = research_result.queries_used
-                logger.info(f"Deep Research completed: {research_result.total_sources} sources, "
-                            f"{len(research_result.citations)} citations")
+                thread.start()
+
+                # Return early -- frontend will poll task and then call /research/confirm
+                return jsonify({
+                    "success": True,
+                    "data": {
+                        "project_id": project.project_id,
+                        "project_name": project.name,
+                        "research_task_id": research_task_id,
+                        "status": "researching",
+                        "files": project.files,
+                        "total_text_length": project.total_text_length,
+                    }
+                })
             except Exception as e:
-                logger.warning(f"Deep Research failed, continuing without: {e}")
+                logger.warning(f"Deep Research failed to start, continuing without: {e}")
 
         # Generate ontology
         logger.info("Calling LLM to generate ontology definition...")
@@ -460,19 +476,56 @@ def build_graph():
                     progress=15
                 )
 
+                # Extract research facts for NER enrichment
+                research_facts = None
+                if project.research_confirmed and project.research_findings:
+                    research_facts = [f.get('fact', '') for f in project.research_findings if f.get('enabled', True)]
+                    if research_facts:
+                        build_logger.info(f"[{task_id}] Injecting {len(research_facts)} research facts into NER")
+
                 episode_uuids = builder.add_text_batches(
                     graph_id,
                     chunks,
                     batch_size=3,
-                    progress_callback=add_progress_callback
+                    progress_callback=add_progress_callback,
+                    research_facts=research_facts,
                 )
 
                 # Neo4j processing is synchronous, no need to wait
                 task_manager.update_task(
                     task_id,
-                    message="Text processing completed, generating graph data...",
-                    progress=90
+                    message="Text processing completed...",
+                    progress=85
                 )
+
+                # Create Citation nodes from research findings
+                citation_count = 0
+                if project.research_confirmed and project.research_findings:
+                    task_manager.update_task(
+                        task_id,
+                        message="Creating citation nodes from research...",
+                        progress=88
+                    )
+                    for finding in project.research_findings:
+                        if not finding.get('enabled', True):
+                            continue
+                        try:
+                            cit_uuid = storage.create_citation(graph_id, {
+                                'fact': finding.get('fact', ''),
+                                'source_url': finding.get('source_url', ''),
+                                'source_title': finding.get('source_title', ''),
+                                'confidence': finding.get('confidence', 'unverified'),
+                                'research_round': finding.get('research_round', 0),
+                            })
+                            # Link to matching entities
+                            for entity_name in finding.get('related_entities', []):
+                                entity = storage.find_entity_by_name(graph_id, entity_name)
+                                if entity:
+                                    storage.link_entity_to_citation(entity['uuid'], cit_uuid)
+                            citation_count += 1
+                        except Exception as ce:
+                            build_logger.warning(f"[{task_id}] Failed to create citation: {ce}")
+                    build_logger.info(f"[{task_id}] Created {citation_count} citation nodes")
 
                 # Get graph data
                 task_manager.update_task(
@@ -575,6 +628,148 @@ def list_tasks():
         "data": [t.to_dict() for t in tasks],
         "count": len(tasks)
     })
+
+
+# ============== Deep Research Confirm ==============
+
+@graph_bp.route('/research/confirm', methods=['POST'])
+def confirm_research():
+    """
+    Confirm research findings and generate ontology.
+    Called after user reviews findings in the review gate UI.
+
+    Request (JSON):
+        {
+            "project_id": "proj_xxxx",
+            "confirmed_finding_ids": ["uuid1", "uuid2", ...]
+        }
+    """
+    try:
+        data = request.get_json() or {}
+        project_id = data.get('project_id')
+        confirmed_ids = data.get('confirmed_finding_ids', [])
+
+        if not project_id:
+            return jsonify({"success": False, "error": "project_id required"}), 400
+
+        project = ProjectManager.get_project(project_id)
+        if not project:
+            return jsonify({"success": False, "error": f"Project not found: {project_id}"}), 404
+
+        # Get research results from task
+        task_manager = TaskManager()
+        task = task_manager.get_task(project.research_task_id) if project.research_task_id else None
+        all_findings = []
+        if task and task.result:
+            all_findings = task.result.get("findings", [])
+
+        # Filter to confirmed findings
+        if confirmed_ids:
+            confirmed = [f for f in all_findings if f.get("id") in confirmed_ids]
+        else:
+            # If no IDs provided, use all non-contradicted findings
+            confirmed = [f for f in all_findings if f.get("confidence") != "contradicted"]
+
+        # Build enriched_context from confirmed findings
+        enriched_parts = []
+        for f in confirmed:
+            status_tag = f.get("confidence", "unverified").upper()
+            enriched_parts.append(f"[{status_tag}] {f.get('fact', '')} (Source: {f.get('source_title', '')})")
+
+        enriched_context = "\n".join(enriched_parts)
+        additional_context = f"\n\n## Web Research Findings\n\n{enriched_context}" if enriched_context else None
+
+        # Save findings to project
+        project.research_findings = confirmed
+        project.research_citations = [
+            {"fact": f.get("fact", ""), "source_url": f.get("source_url", ""),
+             "source_title": f.get("source_title", "")}
+            for f in confirmed
+        ]
+        project.research_queries = task.result.get("queries_used", []) if task and task.result else []
+        project.research_confirmed = True
+
+        # Generate ontology with research context
+        logger.info(f"Generating ontology with {len(confirmed)} confirmed research findings...")
+        text = ProjectManager.get_extracted_text(project_id)
+        document_texts = [text] if text else []
+
+        generator = OntologyGenerator()
+        ontology = generator.generate(
+            document_texts=document_texts,
+            simulation_requirement=project.simulation_requirement or "",
+            additional_context=additional_context,
+        )
+
+        # Save ontology
+        project.ontology = {
+            "entity_types": ontology.get("entity_types", []),
+            "edge_types": ontology.get("edge_types", []),
+        }
+        project.analysis_summary = ontology.get("analysis_summary", "")
+        project.status = ProjectStatus.ONTOLOGY_GENERATED
+        ProjectManager.save_project(project)
+
+        entity_count = len(project.ontology.get("entity_types", []))
+        edge_count = len(project.ontology.get("edge_types", []))
+        logger.info(f"Ontology generated with research: {entity_count} entity types, {edge_count} edge types")
+
+        response_data = project.to_dict()
+        response_data["research"] = {
+            "citations": project.research_citations,
+            "queries_used": project.research_queries,
+            "findings_count": len(confirmed),
+        }
+
+        return jsonify({"success": True, "data": response_data})
+
+    except Exception as e:
+        logger.error(f"Research confirm failed: {e}", exc_info=True)
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+        }), 500
+
+
+@graph_bp.route('/research/skip', methods=['POST'])
+def skip_research():
+    """Skip research and generate ontology without web grounding."""
+    try:
+        data = request.get_json() or {}
+        project_id = data.get('project_id')
+
+        if not project_id:
+            return jsonify({"success": False, "error": "project_id required"}), 400
+
+        project = ProjectManager.get_project(project_id)
+        if not project:
+            return jsonify({"success": False, "error": f"Project not found: {project_id}"}), 404
+
+        # Generate ontology without research
+        text = ProjectManager.get_extracted_text(project_id)
+        document_texts = [text] if text else []
+
+        generator = OntologyGenerator()
+        ontology = generator.generate(
+            document_texts=document_texts,
+            simulation_requirement=project.simulation_requirement or "",
+        )
+
+        project.ontology = {
+            "entity_types": ontology.get("entity_types", []),
+            "edge_types": ontology.get("edge_types", []),
+        }
+        project.analysis_summary = ontology.get("analysis_summary", "")
+        project.research_confirmed = False
+        project.status = ProjectStatus.ONTOLOGY_GENERATED
+        ProjectManager.save_project(project)
+
+        return jsonify({"success": True, "data": project.to_dict()})
+
+    except Exception as e:
+        logger.error(f"Research skip failed: {e}", exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # ============== Graph Data Interface ==============

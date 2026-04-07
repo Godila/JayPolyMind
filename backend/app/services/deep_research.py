@@ -1,12 +1,13 @@
 """
-Deep Research Service
-Web-grounded enrichment for ontology generation.
+Deep Research Service v2
+3-round iterative web-grounded enrichment for ontology generation.
 Searches the internet to verify and enrich facts from uploaded documents.
 """
 
+import uuid
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from typing import Dict, Any, List, Optional, Callable
 
 from ..utils.llm_client import LLMClient
@@ -15,57 +16,110 @@ from .web_search import create_search_client, WebSearchClient
 
 logger = logging.getLogger('jaypolymind.deep_research')
 
-# Maximum chars of document text sent to query generation prompt
-MAX_DOC_PREVIEW = 5000
-# Maximum total chars of search results sent to synthesis prompt
-MAX_SEARCH_CONTENT = 15000
 
+# ---------------------------------------------------------------------------
+# Prompts
+# ---------------------------------------------------------------------------
 
-QUERY_GENERATION_PROMPT = """You are a research assistant. Analyze the document text and simulation requirement below.
-Extract key claims, entities, and facts that should be verified or enriched via web search.
-Generate targeted search queries to find real-world information about these entities and claims.
+QUERY_GENERATION_PROMPT = """You are a research analyst preparing to verify claims in a document.
 
-**Output valid JSON only:**
-```json
+Analyze the document and generate search queries to verify its claims.
+
+Return JSON:
 {
-  "key_claims": ["claim 1", "claim 2", ...],
-  "entities_to_verify": ["Entity Name 1", "Entity Name 2", ...],
-  "search_queries": ["search query 1", "search query 2", ...]
-}
-```
-
-Rules:
-- Generate 4-8 search queries (no more than the max_queries limit)
-- Queries should be specific and factual (not vague)
-- Focus on verifiable claims: names, organizations, dates, roles, events
-- Include queries about relationships between key entities
-- Write queries in the same language as the document content"""
-
-
-SYNTHESIS_PROMPT = """You are a fact-checking research analyst. You have been given:
-1. Key claims from a document
-2. Web search results that may verify, contradict, or enrich these claims
-
-Your task: synthesize the search results into a structured enrichment context that will help
-an LLM build a more accurate ontology of entities and relationships.
-
-**Output valid JSON only:**
-```json
-{
-  "enriched_context": "A structured text (500-1500 words) summarizing verified facts, corrections, and newly discovered entities/relationships. Group by topic. For each fact, note whether it was CONFIRMED, CORRECTED, or NEW.",
-  "citations": [
-    {"fact": "factual statement", "source_url": "https://...", "source_title": "Page Title"},
-    ...
+  "key_claims": [
+    {"claim": "...", "importance": "high/medium", "category": "fact/person/org/date/financial"}
+  ],
+  "entities_to_verify": [
+    {"name": "...", "type": "person/org/product", "context": "mentioned as..."}
+  ],
+  "search_queries": [
+    {"query": "...", "language": "en", "target": "which claim this verifies"}
   ]
 }
-```
 
 Rules:
-- Focus on facts relevant to social media simulation (entities that can voice opinions, their roles, relationships)
-- If search results contradict the document, note the correction clearly
-- Include newly discovered stakeholders or organizations not in the original document
-- Keep citations concise -- only the most important facts (max 15)
+- Generate queries in BOTH the document's language AND English
+- Focus on verifiable factual claims, not opinions
+- Prioritize: people's roles/titles, financial figures, dates, org relationships
+- Each query should target a specific claim
+- Write concise, search-engine-friendly queries"""
+
+
+GAP_ANALYSIS_PROMPT = """You are analyzing research progress to identify gaps.
+
+Determine:
+1. Which claims are now CONFIRMED (with source)?
+2. Which claims are CONTRADICTED (with counter-evidence)?
+3. Which claims remain UNVERIFIED (no relevant results)?
+
+Return JSON:
+{
+  "confirmed": [{"claim": "...", "source_url": "...", "source_title": "..."}],
+  "contradicted": [{"claim": "...", "counter_evidence": "...", "source_url": "..."}],
+  "unresolved_gaps": ["claim that needs more search"],
+  "follow_up_queries": [
+    {"query": "...", "language": "en", "target_gap": "which unresolved claim"}
+  ]
+}
+
+Rules:
+- Only mark as confirmed if source explicitly supports the claim
+- Try different search angles (synonym, related org, news vs wiki)
+- Do not repeat queries that were already searched"""
+
+
+SYNTHESIS_PROMPT = """You are synthesizing web research findings into a structured report.
+
+Create a comprehensive research report with individual findings.
+
+Return JSON:
+{
+  "findings": [
+    {
+      "fact": "verified factual statement",
+      "status": "confirmed/contradicted/unverified",
+      "confidence": "high/medium/low",
+      "source_url": "https://...",
+      "source_title": "Page Title",
+      "related_entities": ["entity names mentioned in this fact"]
+    }
+  ],
+  "enriched_context": "Narrative summary (500-1500 words) for ontology generation. Group by topic. For each fact note if CONFIRMED, CORRECTED, or NEW.",
+  "summary": {
+    "total_claims": 0,
+    "confirmed": 0,
+    "contradicted": 0,
+    "unverified": 0
+  }
+}
+
+Rules:
+- Focus on facts relevant to simulation (entities, roles, relationships)
+- If search results contradict the document, note the correction
+- Include newly discovered stakeholders not in the original document
+- Max 20 findings, prioritize by importance
 - Write enriched_context in the same language as the original claims"""
+
+
+# ---------------------------------------------------------------------------
+# Data classes
+# ---------------------------------------------------------------------------
+
+@dataclass
+class ResearchFinding:
+    """A single verified/unverified fact from web research."""
+    id: str
+    fact: str
+    source_url: str
+    source_title: str
+    research_round: int
+    confidence: str  # confirmed / unverified / contradicted
+    related_entities: List[str] = field(default_factory=list)
+    enabled: bool = True
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
 
 
 @dataclass
@@ -75,6 +129,8 @@ class ResearchResult:
     citations: List[Dict[str, str]]
     queries_used: List[str]
     total_sources: int
+    findings: List[ResearchFinding] = field(default_factory=list)
+    rounds_completed: int = 1
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -82,18 +138,26 @@ class ResearchResult:
             "citations": self.citations,
             "queries_used": self.queries_used,
             "total_sources": self.total_sources,
+            "findings": [f.to_dict() for f in self.findings],
+            "rounds_completed": self.rounds_completed,
         }
 
 
+# ---------------------------------------------------------------------------
+# Service
+# ---------------------------------------------------------------------------
+
 class DeepResearchService:
     """
-    Deep Research: web-grounded enrichment for ontology generation.
+    Deep Research v2: 3-round iterative web-grounded enrichment.
 
-    Pipeline:
-    1. Extract key claims + generate search queries (LLM)
-    2. Execute web searches in parallel
-    3. Deduplicate results by URL
-    4. Synthesize findings into structured context (LLM)
+    Pipeline per round:
+    1. Generate/refine search queries (LLM)
+    2. Execute web searches in parallel (SearXNG)
+    3. Deduplicate results
+
+    After all rounds:
+    4. Synthesize findings (LLM) -> structured ResearchResult
     """
 
     def __init__(
@@ -104,6 +168,162 @@ class DeepResearchService:
         self.llm_client = llm_client or LLMClient()
         self.search_client = search_client or create_search_client()
 
+    # ------------------------------------------------------------------
+    # v2: Async iterative research (called from background thread)
+    # ------------------------------------------------------------------
+
+    def research_iterative(
+        self,
+        document_texts: List[str],
+        simulation_requirement: str,
+        task_id: str,
+        task_manager,
+    ) -> None:
+        """
+        3-round iterative research. Runs in a background thread.
+        Updates progress via task_manager. Stores result in task on completion.
+        """
+        try:
+            self._run_iterative(document_texts, simulation_requirement, task_id, task_manager)
+        except Exception as e:
+            logger.error(f"Research failed: {e}", exc_info=True)
+            task_manager.fail_task(task_id, str(e))
+
+    def _run_iterative(self, document_texts, requirement, task_id, task_manager):
+        doc_preview_len = Config.DEEP_RESEARCH_DOC_PREVIEW
+        max_content = Config.DEEP_RESEARCH_MAX_CONTENT
+        round_queries = [
+            Config.DEEP_RESEARCH_ROUND1_QUERIES,
+            Config.DEEP_RESEARCH_ROUND2_QUERIES,
+            Config.DEEP_RESEARCH_ROUND3_QUERIES,
+        ]
+
+        combined_text = "\n\n".join(document_texts)
+        doc_preview = combined_text[:doc_preview_len]
+        if len(combined_text) > doc_preview_len:
+            doc_preview += "..."
+
+        all_search_results = []
+        all_queries_used = []
+        key_claims = []
+        accumulated_findings_text = ""
+
+        # ---- Round 1: Initial queries ----
+        task_manager.update_task(task_id, status="running", progress=5,
+                                message="Round 1/3: Analyzing document...")
+
+        queries_data = self._generate_initial_queries(doc_preview, requirement, round_queries[0])
+        key_claims = queries_data.get("key_claims", [])
+        queries = [q["query"] if isinstance(q, dict) else q
+                   for q in queries_data.get("search_queries", [])][:round_queries[0]]
+        all_queries_used.extend(queries)
+
+        if not queries:
+            task_manager.complete_task(task_id, ResearchResult(
+                enriched_context="", citations=[], queries_used=[],
+                total_sources=0, findings=[], rounds_completed=0,
+            ).to_dict())
+            return
+
+        task_manager.update_task(task_id, status="running", progress=10,
+                                message=f"Round 1/3: Searching ({len(queries)} queries)...",
+                                result={"current_query": queries[0] if queries else ""})
+
+        r1_results = self._execute_searches_parallel(queries)
+        r1_unique = self._deduplicate_results(r1_results, set())
+        all_search_results.extend(r1_unique)
+        seen_urls = {r["url"] for r in all_search_results}
+
+        accumulated_findings_text = self._results_to_text(r1_unique, max_content // 3)
+
+        task_manager.update_task(task_id, status="running", progress=30,
+                                message=f"Round 1/3: Found {len(r1_unique)} sources")
+
+        # ---- Round 2: Gap analysis + follow-up ----
+        task_manager.update_task(task_id, status="running", progress=35,
+                                message="Round 2/3: Analyzing gaps...")
+
+        gap_data = self._analyze_gaps(key_claims, accumulated_findings_text, all_queries_used)
+        r2_queries = [q["query"] if isinstance(q, dict) else q
+                      for q in gap_data.get("follow_up_queries", [])][:round_queries[1]]
+        all_queries_used.extend(r2_queries)
+
+        if r2_queries:
+            task_manager.update_task(task_id, status="running", progress=40,
+                                    message=f"Round 2/3: Searching ({len(r2_queries)} queries)...",
+                                    result={"current_query": r2_queries[0]})
+
+            r2_results = self._execute_searches_parallel(r2_queries)
+            r2_unique = self._deduplicate_results(r2_results, seen_urls)
+            all_search_results.extend(r2_unique)
+            seen_urls.update(r["url"] for r in r2_unique)
+
+            accumulated_findings_text += "\n" + self._results_to_text(r2_unique, max_content // 3)
+
+        task_manager.update_task(task_id, status="running", progress=60,
+                                message=f"Round 2/3: Total {len(all_search_results)} sources")
+
+        # ---- Round 3: Final follow-up ----
+        task_manager.update_task(task_id, status="running", progress=65,
+                                message="Round 3/3: Final verification...")
+
+        gap_data_2 = self._analyze_gaps(key_claims, accumulated_findings_text, all_queries_used)
+        r3_queries = [q["query"] if isinstance(q, dict) else q
+                      for q in gap_data_2.get("follow_up_queries", [])][:round_queries[2]]
+        all_queries_used.extend(r3_queries)
+
+        if r3_queries:
+            task_manager.update_task(task_id, status="running", progress=70,
+                                    message=f"Round 3/3: Searching ({len(r3_queries)} queries)...",
+                                    result={"current_query": r3_queries[0]})
+
+            r3_results = self._execute_searches_parallel(r3_queries)
+            r3_unique = self._deduplicate_results(r3_results, seen_urls)
+            all_search_results.extend(r3_unique)
+
+            accumulated_findings_text += "\n" + self._results_to_text(r3_unique, max_content // 3)
+
+        task_manager.update_task(task_id, status="running", progress=85,
+                                message="Synthesizing all findings...")
+
+        # ---- Synthesis ----
+        synthesis = self._synthesize_findings_v2(
+            accumulated_findings_text, key_claims, max_content
+        )
+
+        findings = []
+        for i, f in enumerate(synthesis.get("findings", [])):
+            findings.append(ResearchFinding(
+                id=str(uuid.uuid4()),
+                fact=f.get("fact", ""),
+                source_url=f.get("source_url", ""),
+                source_title=f.get("source_title", ""),
+                research_round=f.get("research_round", 1),
+                confidence=f.get("status", f.get("confidence", "unverified")),
+                related_entities=f.get("related_entities", []),
+                enabled=f.get("status", "") != "contradicted",
+            ))
+
+        citations = [{"fact": f.fact, "source_url": f.source_url,
+                       "source_title": f.source_title} for f in findings]
+
+        result = ResearchResult(
+            enriched_context=synthesis.get("enriched_context", ""),
+            citations=citations,
+            queries_used=all_queries_used,
+            total_sources=len(all_search_results),
+            findings=findings,
+            rounds_completed=3,
+        )
+
+        task_manager.update_task(task_id, status="running", progress=95,
+                                message=f"Done: {len(findings)} findings from {len(all_search_results)} sources")
+        task_manager.complete_task(task_id, result.to_dict())
+
+    # ------------------------------------------------------------------
+    # v1: Synchronous research (backward compat)
+    # ------------------------------------------------------------------
+
     def research(
         self,
         document_texts: List[str],
@@ -112,87 +332,74 @@ class DeepResearchService:
         max_results_per_query: int = None,
         progress_callback: Optional[Callable[[str], None]] = None,
     ) -> ResearchResult:
-        """
-        Execute deep research pipeline.
-
-        Args:
-            document_texts: Extracted document texts
-            simulation_requirement: User's simulation requirement
-            max_queries: Max search queries to generate
-            max_results_per_query: Max results per query
-            progress_callback: Optional callback for progress updates
-
-        Returns:
-            ResearchResult with enriched_context and citations
-        """
+        """Synchronous single-round research (v1 backward compat)."""
         max_queries = max_queries or Config.DEEP_RESEARCH_MAX_QUERIES
         max_results_per_query = max_results_per_query or Config.DEEP_RESEARCH_MAX_RESULTS
 
-        # Step 1: Generate search queries via LLM
         self._report(progress_callback, "Analyzing document for key claims...")
-        queries_data = self._generate_search_queries(
-            document_texts, simulation_requirement, max_queries
+        queries_data = self._generate_initial_queries(
+            "\n\n".join(document_texts)[:Config.DEEP_RESEARCH_DOC_PREVIEW],
+            simulation_requirement, max_queries,
         )
-        queries = queries_data.get("search_queries", [])[:max_queries]
+        queries = [q["query"] if isinstance(q, dict) else q
+                   for q in queries_data.get("search_queries", [])][:max_queries]
         key_claims = queries_data.get("key_claims", [])
 
         if not queries:
-            logger.warning("No search queries generated, returning empty result")
-            return ResearchResult(
-                enriched_context="",
-                citations=[],
-                queries_used=[],
-                total_sources=0,
-            )
+            return ResearchResult(enriched_context="", citations=[],
+                                  queries_used=[], total_sources=0)
 
-        logger.info(f"Generated {len(queries)} search queries")
-
-        # Step 2: Parallel web search
         self._report(progress_callback, f"Searching web ({len(queries)} queries)...")
-        all_results = self._execute_searches_parallel(
-            queries, max_results_per_query, progress_callback
-        )
-
-        # Step 3: Deduplicate by URL
-        unique_results = self._deduplicate_results(all_results)
-        logger.info(f"Got {len(unique_results)} unique search results")
+        all_results = self._execute_searches_parallel(queries, max_results_per_query)
+        unique_results = self._deduplicate_results(all_results, set())
 
         if not unique_results:
-            logger.warning("No search results found")
-            return ResearchResult(
-                enriched_context="",
-                citations=[],
-                queries_used=queries,
-                total_sources=0,
-            )
+            return ResearchResult(enriched_context="", citations=[],
+                                  queries_used=queries, total_sources=0)
 
-        # Step 4: Synthesize via LLM
         self._report(progress_callback, "Synthesizing research findings...")
-        synthesis = self._synthesize_findings(unique_results, key_claims)
+        results_text = self._results_to_text(unique_results, Config.DEEP_RESEARCH_MAX_CONTENT)
+        synthesis = self._synthesize_findings_v2(
+            results_text,
+            [c["claim"] if isinstance(c, dict) else c for c in key_claims],
+            Config.DEEP_RESEARCH_MAX_CONTENT,
+        )
+
+        findings = []
+        for f in synthesis.get("findings", []):
+            findings.append(ResearchFinding(
+                id=str(uuid.uuid4()),
+                fact=f.get("fact", ""),
+                source_url=f.get("source_url", ""),
+                source_title=f.get("source_title", ""),
+                research_round=1,
+                confidence=f.get("status", "unverified"),
+                related_entities=f.get("related_entities", []),
+            ))
+
+        citations = [{"fact": f.fact, "source_url": f.source_url,
+                       "source_title": f.source_title} for f in findings]
 
         return ResearchResult(
             enriched_context=synthesis.get("enriched_context", ""),
-            citations=synthesis.get("citations", []),
+            citations=citations,
             queries_used=queries,
             total_sources=len(unique_results),
+            findings=findings,
+            rounds_completed=1,
         )
 
-    def _generate_search_queries(
-        self,
-        document_texts: List[str],
-        simulation_requirement: str,
-        max_queries: int,
-    ) -> Dict[str, Any]:
-        """Generate search queries from document text via LLM."""
-        combined = "\n\n".join(document_texts)
-        if len(combined) > MAX_DOC_PREVIEW:
-            combined = combined[:MAX_DOC_PREVIEW] + "..."
+    # ------------------------------------------------------------------
+    # LLM call helpers
+    # ------------------------------------------------------------------
 
+    def _generate_initial_queries(self, doc_preview, requirement, max_queries):
+        """Round 1: generate search queries from document text."""
         user_msg = f"""## Simulation Requirement
-{simulation_requirement}
+{requirement}
 
 ## Document Text (preview)
-{combined}
+{doc_preview}
 
 Generate up to {max_queries} search queries to verify and enrich the key facts."""
 
@@ -200,37 +407,83 @@ Generate up to {max_queries} search queries to verify and enrich the key facts."
             {"role": "system", "content": QUERY_GENERATION_PROMPT},
             {"role": "user", "content": user_msg},
         ]
-
         try:
-            return self.llm_client.chat_json(
-                messages=messages,
-                temperature=0.3,
-                max_tokens=1024,
-            )
+            return self.llm_client.chat_json(messages=messages, temperature=0.3, max_tokens=1500)
         except Exception as e:
             logger.error(f"Query generation failed: {e}")
             return {"search_queries": [], "key_claims": []}
 
-    def _execute_searches_parallel(
-        self,
-        queries: List[str],
-        max_results_per_query: int,
-        progress_callback: Optional[Callable],
-    ) -> List[Dict[str, Any]]:
+    def _analyze_gaps(self, key_claims, accumulated_results_text, already_searched):
+        """Rounds 2-3: analyze gaps and generate follow-up queries."""
+        claims_text = "\n".join(
+            f"- {c['claim'] if isinstance(c, dict) else c}" for c in key_claims
+        ) if key_claims else "(none)"
+
+        already_text = "\n".join(f"- {q}" for q in already_searched) if already_searched else "(none)"
+
+        user_msg = f"""## Original Claims
+{claims_text}
+
+## Already Searched Queries
+{already_text}
+
+## Search Results So Far
+{accumulated_results_text[:Config.DEEP_RESEARCH_MAX_CONTENT]}
+
+Analyze gaps and generate follow-up queries for unresolved claims."""
+
+        messages = [
+            {"role": "system", "content": GAP_ANALYSIS_PROMPT},
+            {"role": "user", "content": user_msg},
+        ]
+        try:
+            return self.llm_client.chat_json(messages=messages, temperature=0.3, max_tokens=1500)
+        except Exception as e:
+            logger.error(f"Gap analysis failed: {e}")
+            return {"follow_up_queries": [], "unresolved_gaps": []}
+
+    def _synthesize_findings_v2(self, results_text, key_claims, max_content):
+        """Final synthesis: combine all results into structured findings."""
+        claims_text = "\n".join(
+            f"- {c['claim'] if isinstance(c, dict) else c}" for c in key_claims
+        ) if key_claims else "(none extracted)"
+
+        user_msg = f"""## Key Claims from Document
+{claims_text}
+
+## All Web Search Results
+{results_text[:max_content]}
+
+Synthesize these findings into structured report with individual findings."""
+
+        messages = [
+            {"role": "system", "content": SYNTHESIS_PROMPT},
+            {"role": "user", "content": user_msg},
+        ]
+        try:
+            return self.llm_client.chat_json(messages=messages, temperature=0.2, max_tokens=4096)
+        except Exception as e:
+            logger.error(f"Synthesis failed: {e}")
+            return {"enriched_context": "", "findings": [], "citations": []}
+
+    # ------------------------------------------------------------------
+    # Search helpers
+    # ------------------------------------------------------------------
+
+    def _execute_searches_parallel(self, queries, max_results_per_query=None):
         """Execute searches in parallel using ThreadPoolExecutor."""
+        max_results = max_results_per_query or Config.DEEP_RESEARCH_MAX_RESULTS
         all_results = []
 
-        def do_search(query: str):
-            return self.search_client.search(query, max_results=max_results_per_query)
+        def do_search(query):
+            return self.search_client.search(query, max_results=max_results)
 
         with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = {
-                executor.submit(do_search, q): q for q in queries
-            }
+            futures = {executor.submit(do_search, q): q for q in queries}
             for future in as_completed(futures):
                 query = futures[future]
                 try:
-                    results = future.result()
+                    results = future.result(timeout=20)
                     for r in results:
                         all_results.append({
                             "title": r.title,
@@ -244,9 +497,10 @@ Generate up to {max_queries} search queries to verify and enrich the key facts."
 
         return all_results
 
-    def _deduplicate_results(self, results: List[Dict]) -> List[Dict]:
+    def _deduplicate_results(self, results, seen_urls=None):
         """Deduplicate search results by URL."""
-        seen_urls = set()
+        if seen_urls is None:
+            seen_urls = set()
         unique = []
         for r in results:
             url = r.get("url", "")
@@ -255,48 +509,18 @@ Generate up to {max_queries} search queries to verify and enrich the key facts."
                 unique.append(r)
         return unique
 
-    def _synthesize_findings(
-        self,
-        results: List[Dict],
-        key_claims: List[str],
-    ) -> Dict[str, Any]:
-        """Synthesize search results into enriched context via LLM."""
-        # Build search results text, respecting size limit
-        results_text = ""
+    def _results_to_text(self, results, max_chars):
+        """Convert search results to text for LLM consumption."""
+        text = ""
         for r in results:
             entry = f"### {r['title']}\nURL: {r['url']}\n{r['content']}\n\n"
-            if len(results_text) + len(entry) > MAX_SEARCH_CONTENT:
+            if len(text) + len(entry) > max_chars:
                 break
-            results_text += entry
-
-        claims_text = "\n".join(f"- {c}" for c in key_claims) if key_claims else "(none extracted)"
-
-        user_msg = f"""## Key Claims from Document
-{claims_text}
-
-## Web Search Results
-{results_text}
-
-Synthesize these findings into enriched context for ontology generation."""
-
-        messages = [
-            {"role": "system", "content": SYNTHESIS_PROMPT},
-            {"role": "user", "content": user_msg},
-        ]
-
-        try:
-            return self.llm_client.chat_json(
-                messages=messages,
-                temperature=0.2,
-                max_tokens=4096,
-            )
-        except Exception as e:
-            logger.error(f"Synthesis failed: {e}")
-            return {"enriched_context": "", "citations": []}
+            text += entry
+        return text
 
     @staticmethod
-    def _report(callback: Optional[Callable], msg: str):
-        """Report progress if callback is provided."""
+    def _report(callback, msg):
         logger.info(msg)
         if callback:
             callback(msg)

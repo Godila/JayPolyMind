@@ -187,12 +187,16 @@ class GraphBuilderService:
         graph_id: str,
         chunks: List[str],
         batch_size: int = 3,
-        progress_callback: Optional[Callable] = None
+        progress_callback: Optional[Callable] = None,
+        research_facts: Optional[List[str]] = None,
     ) -> List[str]:
         """Add text in batches to graph, return uuid list of all episodes.
 
         Within each batch, chunks are processed in parallel (batch_size workers).
         NER+embed (LLM calls) run concurrently; Neo4j sessions are thread-safe.
+
+        Args:
+            research_facts: Optional verified facts from web research to guide NER extraction.
         """
         import concurrent.futures
         from threading import Lock
@@ -212,7 +216,7 @@ class GraphBuilderService:
                 f"({len(chunk)} chars): \"{chunk_preview}...\""
             )
             t0 = time.time()
-            episode_id = self.storage.add_text(graph_id, chunk)
+            episode_id = self.storage.add_text(graph_id, chunk, research_facts=research_facts)
             elapsed = time.time() - t0
             logger.info(f"[graph_build] Chunk {chunk_idx + 1}/{total_chunks} done in {elapsed:.1f}s")
 

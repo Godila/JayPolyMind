@@ -546,6 +546,23 @@ Function Flow:
 
 [Important] This feature requires the OASIS simulation environment to be running!"""
 
+TOOL_DESC_ENTITY_CITATIONS = """\
+[Entity Citations - Web Research Sources]
+Retrieve web research citations linked to a specific entity in the knowledge graph.
+Returns verified facts from external sources with confidence levels and source URLs.
+
+[Use Cases]
+- Need to cite external sources when writing about an entity
+- Want to cross-reference graph data with web research findings
+- Need to add credibility with source attribution
+
+[Parameters]
+- entity_name: Name of the entity to look up citations for
+
+[Return Content]
+- List of research findings linked to the entity
+- Each finding includes: fact text, confidence level (confirmed/unverified/contradicted), source title and URL"""
+
 # ── Outline Planning Prompt ──
 
 PLAN_SYSTEM_PROMPT = """\
@@ -957,6 +974,13 @@ class ReportAgent:
                     "interview_topic": "Interview topic or requirement description (e.g. 'understand students' views on the dorm formaldehyde incident')",
                     "max_agents": "Maximum number of agents to interview (optional, default 5, max 10)"
                 }
+            },
+            "get_entity_citations": {
+                "name": "get_entity_citations",
+                "description": TOOL_DESC_ENTITY_CITATIONS,
+                "parameters": {
+                    "entity_name": "Name of the entity to retrieve web research citations for"
+                }
             }
         }
     
@@ -1061,15 +1085,22 @@ class ReportAgent:
                 result = [n.to_dict() for n in nodes]
                 return json.dumps(result, ensure_ascii=False, indent=2)
             
+            elif tool_name == "get_entity_citations":
+                entity_name = parameters.get("entity_name", "")
+                return self.graph_tools.get_entity_citations(
+                    graph_id=self.graph_id,
+                    entity_name=entity_name,
+                )
+
             else:
-                return f"Unknown tool: {tool_name}. Please use one of the following tools: insight_forge, panorama_search, quick_search"
+                return f"Unknown tool: {tool_name}. Please use one of the following tools: insight_forge, panorama_search, quick_search, get_entity_citations"
 
         except Exception as e:
             logger.error(f"Tool execution failed: {tool_name}, error: {str(e)}")
             return f"Tool execution failed: {str(e)}"
     
     # Valid tool names set, used for validation when parsing raw JSON fallback
-    VALID_TOOL_NAMES = {"insight_forge", "panorama_search", "quick_search", "interview_agents"}
+    VALID_TOOL_NAMES = {"insight_forge", "panorama_search", "quick_search", "interview_agents", "get_entity_citations"}
 
     def _parse_tool_calls(self, response: str) -> List[Dict[str, Any]]:
         """

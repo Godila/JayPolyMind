@@ -83,6 +83,13 @@ class Config:
     DEEP_RESEARCH_MAX_QUERIES = int(os.environ.get('DEEP_RESEARCH_MAX_QUERIES', '8'))
     DEEP_RESEARCH_MAX_RESULTS = int(os.environ.get('DEEP_RESEARCH_MAX_RESULTS', '3'))
 
+    # Deep Research v2 -- iterative rounds
+    DEEP_RESEARCH_ROUND1_QUERIES = int(os.environ.get('DEEP_RESEARCH_ROUND1_QUERIES', '8'))
+    DEEP_RESEARCH_ROUND2_QUERIES = int(os.environ.get('DEEP_RESEARCH_ROUND2_QUERIES', '6'))
+    DEEP_RESEARCH_ROUND3_QUERIES = int(os.environ.get('DEEP_RESEARCH_ROUND3_QUERIES', '4'))
+    DEEP_RESEARCH_MAX_CONTENT = int(os.environ.get('DEEP_RESEARCH_MAX_CONTENT', '20000'))
+    DEEP_RESEARCH_DOC_PREVIEW = int(os.environ.get('DEEP_RESEARCH_DOC_PREVIEW', '8000'))
+
     @classmethod
     def validate(cls):
         """Validate required configuration"""

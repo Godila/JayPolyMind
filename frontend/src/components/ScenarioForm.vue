@@ -756,20 +756,20 @@ function handleSubmit() {
 }
 
 .research-checkbox:checked + .research-slider {
-  background: rgba(139, 92, 246, 0.3);
-  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(255, 87, 34, 0.15);
+  border-color: rgba(255, 87, 34, 0.4);
 }
 
 .research-checkbox:checked + .research-slider::after {
   transform: translateX(16px);
-  background: #A78BFA;
+  background: #FF5722;
 }
 
 .research-label-text {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
   font-weight: 700;
-  color: #A78BFA;
+  color: #FF5722;
   white-space: nowrap;
 }
 

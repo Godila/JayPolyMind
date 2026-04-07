@@ -287,7 +287,7 @@ const entityTypes = computed(() => {
   const typeMap = {}
   // Beautiful color palette
   const colors = ['#FF6B35', '#004E89', '#7B2D8E', '#1A936F', '#C5283D', '#E9724C', '#3498db', '#9b59b6', '#27ae60', '#f39c12']
-  
+
   props.graphData.nodes.forEach(node => {
     const type = node.labels?.find(l => l !== 'Entity') || 'Entity'
     if (!typeMap[type]) {
@@ -295,6 +295,13 @@ const entityTypes = computed(() => {
     }
     typeMap[type].count++
   })
+
+  // Add Citation type if citations exist
+  const citCount = props.graphData.citations?.length || 0
+  if (citCount > 0) {
+    typeMap['Citation'] = { name: 'Citation', count: citCount, color: '#42A5F5' }
+  }
+
   return Object.values(typeMap)
 })
 
@@ -346,7 +353,9 @@ const renderGraph = () => {
   
   const nodesData = props.graphData.nodes || []
   const edgesData = props.graphData.edges || []
-  
+  const citationsData = props.graphData.citations || []
+  const citationEdgesData = props.graphData.citation_edges || []
+
   if (nodesData.length === 0) return
 
   // Prepare data
@@ -357,8 +366,22 @@ const renderGraph = () => {
     id: n.uuid,
     name: n.name || 'Unnamed',
     type: n.labels?.find(l => l !== 'Entity') || 'Entity',
+    isCitation: false,
     rawData: n
   }))
+
+  // Add citation nodes
+  citationsData.forEach(c => {
+    const citNode = {
+      id: c.uuid,
+      name: c.source_title || c.fact?.substring(0, 30) || 'Citation',
+      type: 'Citation',
+      isCitation: true,
+      rawData: c
+    }
+    nodes.push(citNode)
+    nodeMap[c.uuid] = c
+  })
 
   const nodeIds = new Set(nodes.map(n => n.id))
 
@@ -391,7 +414,26 @@ const renderGraph = () => {
   const processedSelfLoopNodes = new Set() // Processed self-loop nodes
   
   const edges = []
-  
+
+  // Add SOURCED_FROM citation edges
+  citationEdgesData.forEach(ce => {
+    if (nodeIds.has(ce.entity_uuid) && nodeIds.has(ce.citation_uuid)) {
+      edges.push({
+        source: ce.entity_uuid,
+        target: ce.citation_uuid,
+        type: 'SOURCED_FROM',
+        name: 'SOURCED_FROM',
+        curvature: 0,
+        isSelfLoop: false,
+        isCitationEdge: true,
+        rawData: {
+          source_name: nodeMap[ce.entity_uuid]?.name,
+          target_name: nodeMap[ce.citation_uuid]?.source_title || 'Citation'
+        }
+      })
+    }
+  })
+
   tempEdges.forEach(e => {
     const isSelfLoop = e.source_node_uuid === e.target_node_uuid
 
@@ -571,8 +613,9 @@ const renderGraph = () => {
   const link = linkGroup.selectAll('path')
     .data(edges)
     .enter().append('path')
-    .attr('stroke', '#C0C0C0')
-    .attr('stroke-width', 1.5)
+    .attr('stroke', d => d.isCitationEdge ? '#90CAF9' : '#C0C0C0')
+    .attr('stroke-width', d => d.isCitationEdge ? 1 : 1.5)
+    .attr('stroke-dasharray', d => d.isCitationEdge ? '4,3' : 'none')
     .attr('fill', 'none')
     .style('cursor', 'pointer')
     .on('click', (event, d) => {
@@ -654,10 +697,11 @@ const renderGraph = () => {
   const node = nodeGroup.selectAll('circle')
     .data(nodes)
     .enter().append('circle')
-    .attr('r', 10)
-    .attr('fill', d => getColor(d.type))
-    .attr('stroke', '#fff')
-    .attr('stroke-width', 2.5)
+    .attr('r', d => d.isCitation ? 6 : 10)
+    .attr('fill', d => d.isCitation ? '#42A5F5' : getColor(d.type))
+    .attr('stroke', d => d.isCitation ? '#E3F2FD' : '#fff')
+    .attr('stroke-width', d => d.isCitation ? 1.5 : 2.5)
+    .attr('stroke-dasharray', d => d.isCitation ? '2,2' : 'none')
     .style('cursor', 'pointer')
     .call(d3.drag()
       .on('start', (event, d) => {
