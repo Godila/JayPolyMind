@@ -209,6 +209,27 @@ export const getSimulationHistory = (limit = 20) => {
   return service.get('/api/simulation/history', { params: { limit } })
 }
 
+/**
+ * Delete a single simulation and its report
+ * @param {string} simulationId
+ */
+export const deleteSimulation = (simulationId) =>
+  service.delete(`/api/simulation/${simulationId}/delete`)
+
+/**
+ * Bulk delete simulations
+ * @param {string[]} simulationIds
+ */
+export const bulkDeleteSimulations = (simulationIds) =>
+  service.post('/api/simulation/bulk-delete', { simulation_ids: simulationIds })
+
+/**
+ * Cascade delete project: project + all simulations + reports + graph
+ * @param {string} projectId
+ */
+export const deleteProjectFull = (projectId) =>
+  service.delete(`/api/simulation/project/${projectId}/delete-full`)
+
 // ── Custom Agents ────────────────────────────────────────────────────────────
 
 /**
