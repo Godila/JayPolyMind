@@ -224,7 +224,7 @@
             </div>
             <div class="stat-card">
               <span class="stat-value">{{ graphStats.types }}</span>
-              <span class="stat-label">SCHEMA Types</span>
+              <span class="stat-label">Типы сущностей</span>
             </div>
           </div>
         </div>

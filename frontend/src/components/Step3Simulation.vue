@@ -26,7 +26,7 @@
               <span class="stat-value mono">{{ twitterElapsedTime }}</span>
             </span>
             <span class="stat">
-              <span class="stat-label">ACTS</span>
+              <span class="stat-label">Действия</span>
               <span class="stat-value mono">{{ runStatus.twitter_actions_count || 0 }}</span>
             </span>
           </div>
@@ -34,12 +34,12 @@
           <div class="actions-tooltip">
             <div class="tooltip-title">Доступные действия</div>
             <div class="tooltip-actions">
-              <span class="tooltip-action">POST</span>
-              <span class="tooltip-action">LIKE</span>
-              <span class="tooltip-action">REPOST</span>
-              <span class="tooltip-action">QUOTE</span>
-              <span class="tooltip-action">FOLLOW</span>
-              <span class="tooltip-action">IDLE</span>
+              <span class="tooltip-action">Пост</span>
+              <span class="tooltip-action">Лайк</span>
+              <span class="tooltip-action">Репост</span>
+              <span class="tooltip-action">Цитата</span>
+              <span class="tooltip-action">Подписка</span>
+              <span class="tooltip-action">Бездействие</span>
             </div>
           </div>
         </div>
@@ -67,7 +67,7 @@
               <span class="stat-value mono">{{ redditElapsedTime }}</span>
             </span>
             <span class="stat">
-              <span class="stat-label">ACTS</span>
+              <span class="stat-label">Действия</span>
               <span class="stat-value mono">{{ runStatus.reddit_actions_count || 0 }}</span>
             </span>
           </div>
@@ -75,16 +75,16 @@
           <div class="actions-tooltip">
             <div class="tooltip-title">Доступные действия</div>
             <div class="tooltip-actions">
-              <span class="tooltip-action">POST</span>
-              <span class="tooltip-action">COMMENT</span>
-              <span class="tooltip-action">LIKE</span>
-              <span class="tooltip-action">DISLIKE</span>
-              <span class="tooltip-action">SEARCH</span>
-              <span class="tooltip-action">TREND</span>
-              <span class="tooltip-action">FOLLOW</span>
-              <span class="tooltip-action">MUTE</span>
-              <span class="tooltip-action">REFRESH</span>
-              <span class="tooltip-action">IDLE</span>
+              <span class="tooltip-action">Пост</span>
+              <span class="tooltip-action">Комментарий</span>
+              <span class="tooltip-action">Лайк</span>
+              <span class="tooltip-action">Дизлайк</span>
+              <span class="tooltip-action">Поиск</span>
+              <span class="tooltip-action">Тренды</span>
+              <span class="tooltip-action">Подписка</span>
+              <span class="tooltip-action">Мут</span>
+              <span class="tooltip-action">Обновление</span>
+              <span class="tooltip-action">Бездействие</span>
             </div>
           </div>
         </div>

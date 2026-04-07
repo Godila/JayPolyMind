@@ -296,13 +296,13 @@ class SimulationConfigGenerator:
         num_entities = len(entities)
         time_config_result = self._generate_time_config(context, num_entities)
         time_config = self._parse_time_config(time_config_result, num_entities)
-        reasoning_parts.append(f"Time config: {time_config_result.get('reasoning', 'Success')}")
+        reasoning_parts.append(f"Временная конфигурация: {time_config_result.get('reasoning', 'Успешно')}")
 
         # ========== Step 2: Generate event configuration ==========
         report_progress(2, "Generating event configuration and hot topics...")
         event_config_result = self._generate_event_config(context, simulation_requirement, entities)
         event_config = self._parse_event_config(event_config_result)
-        reasoning_parts.append(f"Event config: {event_config_result.get('reasoning', 'Success')}")
+        reasoning_parts.append(f"Конфигурация событий: {event_config_result.get('reasoning', 'Успешно')}")
 
         # ========== Step 3-N: Generate agent configurations in batches ==========
         all_agent_configs = []
@@ -324,13 +324,13 @@ class SimulationConfigGenerator:
             )
             all_agent_configs.extend(batch_configs)
         
-        reasoning_parts.append(f"Agent config: Successfully generated {len(all_agent_configs)}")
+        reasoning_parts.append(f"Конфигурация агентов: сгенерировано {len(all_agent_configs)}")
 
         # ========== Assign initial post agents ==========
         logger.info("Assigning appropriate publisher agents to initial posts...")
         event_config = self._assign_initial_post_agents(event_config, all_agent_configs)
         assigned_count = len([p for p in event_config.initial_posts if p.get("poster_agent_id") is not None])
-        reasoning_parts.append(f"Initial posts assigned: {assigned_count} posts assigned publishers")
+        reasoning_parts.append(f"Начальные посты: {assigned_count} постов назначено агентам")
 
         # ========== Final step: Generate platform configuration ==========
         report_progress(total_steps, "Generating platform configuration...")
@@ -582,9 +582,9 @@ Field description:
 - off_peak_hours (int array): Off-peak hours, usually late night/early morning
 - morning_hours (int array): Morning hours
 - work_hours (int array): Work hours
-- reasoning (string): Brief explanation for this configuration"""
+- reasoning (string): Brief explanation for this configuration IN RUSSIAN"""
 
-        system_prompt = "You are a social media simulation expert. Return pure JSON format, time configuration must follow Russian work schedule habits (Moscow Time, UTC+3)."
+        system_prompt = "You are a social media simulation expert. Return pure JSON format, time configuration must follow Russian work schedule habits (Moscow Time, UTC+3). IMPORTANT: Write the 'reasoning' field ONLY in Russian."
 
         try:
             return self._call_llm_with_retry(prompt, system_prompt)
@@ -697,10 +697,10 @@ Return JSON format (no markdown):
         {{"content": "post content", "poster_type": "entity type (must select from available types)"}},
         ...
     ],
-    "reasoning": "<brief explanation>"
+    "reasoning": "<brief explanation IN RUSSIAN>"
 }}"""
 
-        system_prompt = "You are an opinion analysis expert. Return pure JSON format. Note poster_type must match available entity types precisely."
+        system_prompt = "You are an opinion analysis expert. Return pure JSON format. Note poster_type must match available entity types precisely. IMPORTANT: Write the 'reasoning' field ONLY in Russian."
 
         try:
             return self._call_llm_with_retry(prompt, system_prompt)
