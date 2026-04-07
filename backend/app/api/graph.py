@@ -518,10 +518,15 @@ def build_graph():
                                 'research_round': finding.get('research_round', 0),
                             })
                             # Link to matching entities
+                            linked = False
                             for entity_name in finding.get('related_entities', []):
                                 entity = storage.find_entity_by_name(graph_id, entity_name)
                                 if entity:
                                     storage.link_entity_to_citation(entity['uuid'], cit_uuid)
+                                    build_logger.info(f"[{task_id}] Linked citation to entity '{entity['name']}'")
+                                    linked = True
+                                else:
+                                    build_logger.debug(f"[{task_id}] Entity not found for linking: '{entity_name}'")
                             citation_count += 1
                         except Exception as ce:
                             build_logger.warning(f"[{task_id}] Failed to create citation: {ce}")

@@ -652,17 +652,20 @@ class Neo4jStorage(GraphStorage):
                 MERGE (c:Citation {graph_id: $gid, fact: $fact})
                 ON CREATE SET
                     c.uuid = $uuid,
+                    c.name = $name,
                     c.source_url = $source_url,
                     c.source_title = $source_title,
                     c.confidence = $confidence,
                     c.research_round = $research_round,
                     c.created_at = $created_at
                 ON MATCH SET
+                    c.name = $name,
                     c.source_url = $source_url,
                     c.confidence = $confidence
                 """,
                 gid=graph_id,
                 uuid=cit_uuid,
+                name=citation_data.get("source_title", "") or citation_data.get("fact", "")[:50],
                 fact=citation_data.get("fact", ""),
                 source_url=citation_data.get("source_url", ""),
                 source_title=citation_data.get("source_title", ""),

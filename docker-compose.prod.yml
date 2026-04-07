@@ -61,7 +61,7 @@ services:
     environment:
       SEARXNG_BASE_URL: http://searxng:8080/
     volumes:
-      - searxng_data:/etc/searxng
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
     networks:
       - app-net
     restart: unless-stopped
@@ -91,7 +91,6 @@ volumes:
   neo4j_logs:
   caddy_data:
   caddy_config:
-  searxng_data:
 
 networks:
   app-net:
