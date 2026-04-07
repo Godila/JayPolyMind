@@ -160,6 +160,16 @@
         </ul>
       </div>
 
+      <!-- ── Deep Research toggle ──────────────────────────────────────── -->
+      <div class="research-toggle-section">
+        <label class="research-toggle">
+          <input type="checkbox" v-model="enableResearch" class="research-checkbox" />
+          <span class="research-slider"></span>
+          <span class="research-label-text">Deep Research</span>
+        </label>
+        <span class="research-hint">Веб-поиск для верификации и обогащения фактов из документов (+15-25 сек)</span>
+      </div>
+
       <!-- ── CTA ───────────────────────────────────────────────────────── -->
       <div class="cta-row">
         <div v-if="!canSubmit" class="validation-hint">
@@ -218,6 +228,9 @@ const demoLoaded  = ref(false)
 const demoLoading = ref(false)
 const previewOpen = ref(false)
 const previewFile = ref({ name: '', content: '' })
+
+// Deep Research toggle
+const enableResearch = ref(false)
 
 // Dry Test state
 const dryTestLoaded  = ref(false)
@@ -339,7 +352,7 @@ function handleSubmit() {
   if (!canSubmit.value) return
   // Flatten all slot files into single array (backend accepts files[])
   const allFiles = slotFiles.flat()
-  emit('submit', { files: allFiles, requirement: requirement.value.trim() })
+  emit('submit', { files: allFiles, requirement: requirement.value.trim(), enableResearch: enableResearch.value })
 }
 </script>
 
@@ -694,6 +707,76 @@ function handleSubmit() {
   font-size: 0.75rem;
   flex-shrink: 0;
   margin-top: 2px;
+}
+
+/* ── Deep Research toggle ────────────────────────────────────────────────── */
+.research-toggle-section {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+
+.research-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.research-checkbox {
+  display: none;
+}
+
+.research-slider {
+  width: 36px;
+  height: 20px;
+  background: #1E293B;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.research-slider::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #64748B;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.research-checkbox:checked + .research-slider {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: rgba(139, 92, 246, 0.6);
+}
+
+.research-checkbox:checked + .research-slider::after {
+  transform: translateX(16px);
+  background: #A78BFA;
+}
+
+.research-label-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #A78BFA;
+  white-space: nowrap;
+}
+
+.research-hint {
+  font-size: 0.75rem;
+  color: #7FA4C4;
+  line-height: 1.4;
 }
 
 /* ── CTA ─────────────────────────────────────────────────────────────────── */

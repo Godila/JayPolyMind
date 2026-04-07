@@ -49,6 +49,10 @@ class Project:
     chunk_size: int = 500
     chunk_overlap: int = 50
 
+    # Deep Research results
+    research_citations: Optional[List[Dict[str, str]]] = None
+    research_queries: Optional[List[str]] = None
+
     # Error information
     error: Optional[str] = None
 
@@ -69,6 +73,8 @@ class Project:
             "simulation_requirement": self.simulation_requirement,
             "chunk_size": self.chunk_size,
             "chunk_overlap": self.chunk_overlap,
+            "research_citations": self.research_citations,
+            "research_queries": self.research_queries,
             "error": self.error
         }
     
@@ -94,6 +100,8 @@ class Project:
             simulation_requirement=data.get('simulation_requirement'),
             chunk_size=data.get('chunk_size', 500),
             chunk_overlap=data.get('chunk_overlap', 50),
+            research_citations=data.get('research_citations'),
+            research_queries=data.get('research_queries'),
             error=data.get('error')
         )
 

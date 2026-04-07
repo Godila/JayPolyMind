@@ -80,9 +80,9 @@ function onBack() {
   selectedScenario.value = null
 }
 
-async function onSubmit({ files, requirement }) {
+async function onSubmit({ files, requirement, enableResearch }) {
   const { setPendingUpload } = await import('../store/pendingUpload.js')
-  setPendingUpload(files, requirement)
+  setPendingUpload(files, requirement, enableResearch)
   router.push({ name: 'Process', params: { projectId: 'new' } })
 }
 </script>

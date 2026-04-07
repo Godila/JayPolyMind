@@ -44,11 +44,24 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       DEMO_LOGIN: ${DEMO_LOGIN:-demo}
       DEMO_PASSWORD: ${DEMO_PASSWORD}
+      # Deep Research
+      SEARXNG_URL: http://searxng:8080
+      DEEP_RESEARCH_ENABLED: ${DEEP_RESEARCH_ENABLED:-false}
     depends_on:
       neo4j:
         condition: service_healthy
     volumes:
       - ./backend/uploads:/app/backend/uploads
+    networks:
+      - app-net
+    restart: unless-stopped
+
+  searxng:
+    image: searxng/searxng:latest
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080/
+    volumes:
+      - searxng_data:/etc/searxng
     networks:
       - app-net
     restart: unless-stopped
@@ -78,6 +91,7 @@ volumes:
   neo4j_logs:
   caddy_data:
   caddy_config:
+  searxng_data:
 
 networks:
   app-net:

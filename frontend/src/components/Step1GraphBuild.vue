@@ -88,6 +88,17 @@
             </div>
           </div>
 
+          <!-- Deep Research Citations -->
+          <div v-if="projectData?.research?.citations?.length" class="tags-container" :class="{ 'dimmed': selectedOntologyItem }">
+            <span class="tag-label">DEEP RESEARCH <span style="color: #A78BFA;">({{ projectData.research.citations.length }} sources)</span></span>
+            <div class="citations-list">
+              <div v-for="(cite, idx) in projectData.research.citations.slice(0, 5)" :key="idx" class="citation-item">
+                <span class="citation-fact">{{ cite.fact }}</span>
+                <a v-if="cite.source_url" :href="cite.source_url" target="_blank" rel="noopener" class="citation-link">{{ cite.source_title || 'source' }}</a>
+              </div>
+            </div>
+          </div>
+
           <!-- Generated Relation Tags -->
           <div v-if="projectData?.ontology?.edge_types" class="tags-container" :class="{ 'dimmed': selectedOntologyItem }">
             <span class="tag-label">ТИПЫ СВЯЗЕЙ</span>
@@ -571,6 +582,43 @@ watch(() => props.systemLogs.length, () => {
 
 .conn-arrow {
     color: #BBB;
+}
+
+/* Deep Research Citations */
+.citations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.citation-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  padding: 6px 8px;
+  background: #F9F5FF;
+  border: 1px solid #EDE9FE;
+  border-radius: 4px;
+}
+
+.citation-fact {
+  color: #444;
+  flex: 1;
+  line-height: 1.4;
+}
+
+.citation-link {
+  color: #7C3AED;
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.citation-link:hover {
+  text-decoration: underline;
 }
 
 /* Step 02 Stats */

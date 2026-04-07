@@ -219,6 +219,27 @@ def generate_ontology():
         ProjectManager.save_extracted_text(project.project_id, all_text)
         logger.info(f"Text extraction completed, total {len(all_text)} characters")
 
+        # --- Deep Research (optional web grounding) ---
+        enable_research = request.form.get('enable_research', '').lower()
+        if enable_research == 'true' or (enable_research == '' and Config.DEEP_RESEARCH_ENABLED):
+            try:
+                from ..services.deep_research import DeepResearchService
+                logger.info("Deep Research enabled, starting web search grounding...")
+                researcher = DeepResearchService()
+                research_result = researcher.research(
+                    document_texts=document_texts,
+                    simulation_requirement=simulation_requirement,
+                )
+                if research_result.enriched_context:
+                    research_context = f"\n\n## Web Research Findings\n\n{research_result.enriched_context}"
+                    additional_context = (additional_context or '') + research_context
+                project.research_citations = research_result.citations
+                project.research_queries = research_result.queries_used
+                logger.info(f"Deep Research completed: {research_result.total_sources} sources, "
+                            f"{len(research_result.citations)} citations")
+            except Exception as e:
+                logger.warning(f"Deep Research failed, continuing without: {e}")
+
         # Generate ontology
         logger.info("Calling LLM to generate ontology definition...")
         generator = OntologyGenerator()
@@ -242,16 +263,23 @@ def generate_ontology():
         ProjectManager.save_project(project)
         logger.info(f"=== Ontology generation completed === Project ID: {project.project_id}")
         
+        response_data = {
+            "project_id": project.project_id,
+            "project_name": project.name,
+            "ontology": project.ontology,
+            "analysis_summary": project.analysis_summary,
+            "files": project.files,
+            "total_text_length": project.total_text_length
+        }
+        if project.research_citations:
+            response_data["research"] = {
+                "citations": project.research_citations,
+                "queries_used": project.research_queries,
+            }
+
         return jsonify({
             "success": True,
-            "data": {
-                "project_id": project.project_id,
-                "project_name": project.name,
-                "ontology": project.ontology,
-                "analysis_summary": project.analysis_summary,
-                "files": project.files,
-                "total_text_length": project.total_text_length
-            }
+            "data": response_data
         })
         
     except Exception as e:

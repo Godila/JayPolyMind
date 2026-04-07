@@ -26,6 +26,9 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       DEMO_LOGIN: ${DEMO_LOGIN:-demo}
       DEMO_PASSWORD: ${DEMO_PASSWORD}
+      # Deep Research
+      SEARXNG_URL: http://searxng:8080
+      DEEP_RESEARCH_ENABLED: ${DEEP_RESEARCH_ENABLED:-false}
     depends_on:
       neo4j:
         condition: service_healthy
@@ -34,6 +37,16 @@ services:
     networks:
       - jaypolymind-internal
       - dokploy-network
+    restart: unless-stopped
+
+  searxng:
+    image: searxng/searxng:latest
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080/
+    volumes:
+      - searxng_data:/etc/searxng
+    networks:
+      - jaypolymind-internal
     restart: unless-stopped
 
   neo4j:
@@ -59,6 +72,7 @@ services:
 volumes:
   neo4j_data:
   neo4j_logs:
+  searxng_data:
 
 networks:
   jaypolymind-internal:
