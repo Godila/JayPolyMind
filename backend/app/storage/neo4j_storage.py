@@ -606,7 +606,7 @@ class Neo4jStorage(GraphStorage):
                     seen_cit_uuids.add(cit_uuid)
                     citations.append({
                         "uuid": cit_uuid,
-                        "name": c.get("name", "") or c.get("source_title", "") or c.get("fact", "")[:50],
+                        "name": c.get("name", "") or c.get("fact", "")[:80] or c.get("source_title", ""),
                         "fact": c.get("fact", ""),
                         "source_url": c.get("source_url", ""),
                         "source_title": c.get("source_title", ""),
@@ -662,7 +662,7 @@ class Neo4jStorage(GraphStorage):
                 """,
                 gid=graph_id,
                 uuid=cit_uuid,
-                name=citation_data.get("source_title", "") or citation_data.get("fact", "")[:50],
+                name=citation_data.get("fact", "")[:80] or citation_data.get("source_title", ""),
                 fact=citation_data.get("fact", ""),
                 source_url=citation_data.get("source_url", ""),
                 source_title=citation_data.get("source_title", ""),

@@ -162,8 +162,9 @@ class EntityReader:
         for node in all_nodes:
             labels = node.get("labels", [])
 
-            # Filter logic: Labels must contain labels besides "Entity" and "Node"
-            custom_labels = [la for la in labels if la not in ["Entity", "Node"]]
+            # Filter logic: Labels must contain labels besides "Entity", "Node", "Citation"
+            # Citation nodes are research metadata, not simulation entities
+            custom_labels = [la for la in labels if la not in ["Entity", "Node", "Citation"]]
 
             if not custom_labels:
                 # Only default labels, skip
