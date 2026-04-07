@@ -100,7 +100,7 @@
                 <span class="research-title">Deep Research</span>
                 <span class="research-badge running">Searching...</span>
               </div>
-              <p class="research-desc">Web search in progress. Typically takes 60-90 seconds.</p>
+              <p class="research-desc">Поиск в интернете. Обычно занимает 60-90 секунд.</p>
             </div>
 
             <!-- Review state -->
@@ -109,7 +109,12 @@
                 <span class="research-title">Deep Research</span>
                 <span class="research-badge review">{{ enabledCount }}/{{ researchFindings.length }} selected</span>
               </div>
-              <p class="research-desc">Toggle off irrelevant findings before confirming.</p>
+              <p class="research-desc">Отключите нерелевантные факты перед подтверждением.</p>
+              <div class="confidence-legend">
+                <span class="legend-item"><span class="legend-dot confirmed"></span>Подтверждено</span>
+                <span class="legend-item"><span class="legend-dot unverified"></span>Не проверено</span>
+                <span class="legend-item"><span class="legend-dot contradicted"></span>Противоречие</span>
+              </div>
               <div class="findings-list">
                 <div
                   v-for="finding in researchFindings"
@@ -119,6 +124,11 @@
                 >
                   <div class="finding-left" :class="'confidence-' + finding.confidence"></div>
                   <div class="finding-body">
+                    <div class="finding-top-row">
+                      <span class="finding-confidence-tag" :class="'tag-' + finding.confidence">
+                        {{ {confirmed: 'Подтверждено', unverified: 'Не проверено', contradicted: 'Противоречие'}[finding.confidence] || finding.confidence }}
+                      </span>
+                    </div>
                     <span class="finding-fact">{{ finding.fact }}</span>
                     <span class="finding-source">{{ finding.source_title || finding.source_url }}</span>
                   </div>
@@ -129,10 +139,10 @@
               </div>
               <div class="research-actions">
                 <button class="action-btn research-confirm-btn" @click="emit('research-confirm')">
-                  Confirm {{ enabledCount }} findings
+                  Подтвердить {{ enabledCount }} {{ enabledCount === 1 ? 'факт' : 'фактов' }}
                 </button>
                 <button class="research-skip-link" @click="emit('research-skip')">
-                  Skip research
+                  Пропустить
                 </button>
               </div>
             </div>
@@ -143,7 +153,7 @@
                 <span class="research-title">Deep Research</span>
                 <span class="research-badge confirmed">Confirmed</span>
               </div>
-              <p class="research-desc">{{ enabledCount }} findings applied to ontology generation.</p>
+              <p class="research-desc">{{ enabledCount }} {{ enabledCount === 1 ? 'факт применён' : 'фактов применено' }} к генерации онтологии.</p>
             </div>
 
             <!-- Skipped state -->
@@ -152,7 +162,7 @@
                 <span class="research-title">Deep Research</span>
                 <span class="research-badge skipped">Skipped</span>
               </div>
-              <p class="research-desc">Ontology generated without web research context.</p>
+              <p class="research-desc">Онтология сгенерирована без веб-контекста.</p>
             </div>
 
             <!-- Error state -->
@@ -161,7 +171,7 @@
                 <span class="research-title">Deep Research</span>
                 <span class="research-badge error">Error</span>
               </div>
-              <p class="research-desc">Research failed. Ontology will be generated without web context.</p>
+              <p class="research-desc">Исследование не удалось. Онтология будет сгенерирована без веб-контекста.</p>
             </div>
           </div>
 
@@ -704,6 +714,62 @@ watch(() => props.systemLogs.length, () => {
   color: #888;
   margin-bottom: 12px;
   line-height: 1.4;
+}
+
+/* Confidence legend */
+.confidence-legend {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #999;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+}
+
+.legend-dot.confirmed { background: #4CAF50; }
+.legend-dot.unverified { background: #FF9800; }
+.legend-dot.contradicted { background: #F44336; }
+
+/* Confidence tags */
+.finding-top-row {
+  margin-bottom: 2px;
+}
+
+.finding-confidence-tag {
+  font-size: 9px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 1px 6px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.finding-confidence-tag.tag-confirmed {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+
+.finding-confidence-tag.tag-unverified {
+  background: #FFF3E0;
+  color: #E65100;
+}
+
+.finding-confidence-tag.tag-contradicted {
+  background: #FFEBEE;
+  color: #C62828;
 }
 
 .findings-list {

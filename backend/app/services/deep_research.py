@@ -99,7 +99,8 @@ Rules:
 - If search results contradict the document, note the correction
 - Include newly discovered stakeholders not in the original document
 - Max 20 findings, prioritize by importance
-- Write enriched_context in the same language as the original claims"""
+- ALWAYS write "fact" and "enriched_context" in Russian, regardless of the language of the source material
+- "source_title" should remain in the original language of the source"""
 
 
 # ---------------------------------------------------------------------------
