@@ -33,10 +33,15 @@ class GraphStorage(ABC):
     # --- Add data ---
 
     @abstractmethod
-    def add_text(self, graph_id: str, text: str) -> str:
+    def add_text(self, graph_id: str, text: str, research_facts: Optional[List[str]] = None) -> str:
         """
         Process text: NER/RE → create nodes/edges → return episode_id.
         This is synchronous (unlike Zep Cloud's async episodes).
+
+        Args:
+            graph_id: Graph to add text to
+            text: Text chunk to process
+            research_facts: Optional verified facts from web research to guide NER
         """
 
     @abstractmethod

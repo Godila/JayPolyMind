@@ -480,6 +480,43 @@ class SimulationManager:
         
         return simulations
     
+    def delete_simulation(self, simulation_id: str) -> Dict[str, Any]:
+        """Delete simulation and all associated data (files + report)"""
+        from .report_agent import ReportManager
+        from .simulation_runner import SimulationRunner
+
+        result = {"simulation_id": simulation_id, "deleted": [], "errors": []}
+
+        # Stop running process if any
+        try:
+            run_state = SimulationRunner.get_run_state(simulation_id)
+            if run_state and run_state.runner_status in ("running", "starting"):
+                SimulationRunner.stop_simulation(simulation_id)
+                result["deleted"].append("running_process")
+        except Exception as e:
+            result["errors"].append(f"stop_process: {e}")
+
+        # Delete associated report
+        try:
+            report = ReportManager.get_report_by_simulation(simulation_id)
+            if report:
+                ReportManager.delete_report(report.report_id)
+                result["deleted"].append(f"report:{report.report_id}")
+        except Exception as e:
+            result["errors"].append(f"report: {e}")
+
+        # Delete simulation directory
+        sim_dir = os.path.join(self.SIMULATION_DATA_DIR, simulation_id)
+        if os.path.exists(sim_dir) and os.path.isdir(sim_dir):
+            shutil.rmtree(sim_dir)
+            result["deleted"].append("simulation_files")
+
+        # Clean in-memory state
+        self._simulations.pop(simulation_id, None)
+        SimulationRunner.cleanup_memory(simulation_id)
+
+        return result
+
     def get_profiles(self, simulation_id: str, platform: str = "reddit") -> List[Dict[str, Any]]:
         """Get Agent Profiles for simulation"""
         state = self._load_simulation_state(simulation_id)

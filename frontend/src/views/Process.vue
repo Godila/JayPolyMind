@@ -585,6 +585,9 @@ const handleNewProject = async () => {
       formDataObj.append('files', file)
     })
     formDataObj.append('simulation_requirement', pending.simulationRequirement)
+    if (pending.enableResearch) {
+      formDataObj.append('enable_research', 'true')
+    }
 
     // Call ontology generation API
     const response = await generateOntology(formDataObj)

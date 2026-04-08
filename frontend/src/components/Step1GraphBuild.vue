@@ -88,6 +88,93 @@
             </div>
           </div>
 
+          <!-- Deep Research v2 Card -->
+          <div v-if="researchState !== 'idle'" class="research-card" :class="'research-' + researchState">
+
+            <!-- Running state -->
+            <div v-if="researchState === 'running'" class="research-running">
+              <div class="research-header">
+                <span class="research-icon">
+                  <span class="spinner-sm"></span>
+                </span>
+                <span class="research-title">Deep Research</span>
+                <span class="research-badge running">Searching...</span>
+              </div>
+              <p class="research-desc">Поиск в интернете. Обычно занимает 60-90 секунд.</p>
+            </div>
+
+            <!-- Review state -->
+            <div v-else-if="researchState === 'review'" class="research-review">
+              <div class="research-header">
+                <span class="research-title">Deep Research</span>
+                <span class="research-badge review">{{ enabledCount }}/{{ researchFindings.length }} selected</span>
+              </div>
+              <p class="research-desc">Отключите нерелевантные факты перед подтверждением.</p>
+              <div class="confidence-legend">
+                <span class="legend-item"><span class="legend-dot confirmed"></span>Подтверждено</span>
+                <span class="legend-item"><span class="legend-dot unverified"></span>Не проверено</span>
+                <span class="legend-item"><span class="legend-dot contradicted"></span>Противоречие</span>
+              </div>
+              <div class="findings-list">
+                <div
+                  v-for="finding in researchFindings"
+                  :key="finding.id"
+                  class="finding-item"
+                  :class="{ disabled: !finding.enabled }"
+                >
+                  <div class="finding-left" :class="'confidence-' + finding.confidence"></div>
+                  <div class="finding-body">
+                    <div class="finding-top-row">
+                      <span class="finding-confidence-tag" :class="'tag-' + finding.confidence">
+                        {{ {confirmed: 'Подтверждено', unverified: 'Не проверено', contradicted: 'Противоречие'}[finding.confidence] || finding.confidence }}
+                      </span>
+                    </div>
+                    <span class="finding-fact">{{ finding.fact }}</span>
+                    <span class="finding-source">{{ finding.source_title || finding.source_url }}</span>
+                  </div>
+                  <button class="finding-toggle" @click="emit('research-toggle', finding.id)">
+                    {{ finding.enabled ? 'ON' : 'OFF' }}
+                  </button>
+                </div>
+              </div>
+              <div class="research-actions">
+                <button class="action-btn research-confirm-btn" @click="emit('research-confirm')">
+                  Подтвердить {{ enabledCount }} {{ enabledCount === 1 ? 'факт' : 'фактов' }}
+                </button>
+                <button class="research-skip-link" @click="emit('research-skip')">
+                  Пропустить
+                </button>
+              </div>
+            </div>
+
+            <!-- Confirmed state -->
+            <div v-else-if="researchState === 'confirmed'" class="research-done">
+              <div class="research-header">
+                <span class="research-title">Deep Research</span>
+                <span class="research-badge confirmed">Confirmed</span>
+              </div>
+              <p class="research-desc">{{ enabledCount }} {{ enabledCount === 1 ? 'факт применён' : 'фактов применено' }} к генерации онтологии.</p>
+            </div>
+
+            <!-- Skipped state -->
+            <div v-else-if="researchState === 'skipped'" class="research-done">
+              <div class="research-header">
+                <span class="research-title">Deep Research</span>
+                <span class="research-badge skipped">Skipped</span>
+              </div>
+              <p class="research-desc">Онтология сгенерирована без веб-контекста.</p>
+            </div>
+
+            <!-- Error state -->
+            <div v-else-if="researchState === 'error'" class="research-done">
+              <div class="research-header">
+                <span class="research-title">Deep Research</span>
+                <span class="research-badge error">Error</span>
+              </div>
+              <p class="research-desc">Исследование не удалось. Онтология будет сгенерирована без веб-контекста.</p>
+            </div>
+          </div>
+
           <!-- Generated Relation Tags -->
           <div v-if="projectData?.ontology?.edge_types" class="tags-container" :class="{ 'dimmed': selectedOntologyItem }">
             <span class="tag-label">ТИПЫ СВЯЗЕЙ</span>
@@ -137,7 +224,7 @@
             </div>
             <div class="stat-card">
               <span class="stat-value">{{ graphStats.types }}</span>
-              <span class="stat-label">SCHEMA Types</span>
+              <span class="stat-label">Типы сущностей</span>
             </div>
           </div>
         </div>
@@ -202,10 +289,14 @@ const props = defineProps({
   ontologyProgress: Object,
   buildProgress: Object,
   graphData: Object,
-  systemLogs: { type: Array, default: () => [] }
+  systemLogs: { type: Array, default: () => [] },
+  researchState: { type: String, default: 'idle' },
+  researchFindings: { type: Array, default: () => [] },
 })
 
-defineEmits(['next-step'])
+const emit = defineEmits(['next-step', 'research-confirm', 'research-skip', 'research-toggle'])
+
+const enabledCount = computed(() => props.researchFindings.filter(f => f.enabled).length)
 
 const selectedOntologyItem = ref(null)
 const logContent = ref(null)
@@ -571,6 +662,210 @@ watch(() => props.systemLogs.length, () => {
 
 .conn-arrow {
     color: #BBB;
+}
+
+/* Deep Research v2 Card */
+.research-card {
+  margin-top: 16px;
+  padding: 16px;
+  background: #FFF;
+  border: 1px solid #EAEAEA;
+  border-radius: 6px;
+}
+
+.research-card.research-running {
+  border-color: #FF5722;
+  background: #FFF8F6;
+}
+
+.research-card.research-review {
+  border-color: #FF5722;
+}
+
+.research-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.research-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: #000;
+}
+
+.research-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.research-badge.running { background: #FF5722; color: #FFF; }
+.research-badge.review { background: #FFF3E0; color: #E65100; }
+.research-badge.confirmed { background: #E8F5E9; color: #2E7D32; }
+.research-badge.skipped { background: #F5F5F5; color: #999; }
+.research-badge.error { background: #FFEBEE; color: #C62828; }
+
+.research-desc {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+/* Confidence legend */
+.confidence-legend {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #999;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+}
+
+.legend-dot.confirmed { background: #4CAF50; }
+.legend-dot.unverified { background: #FF9800; }
+.legend-dot.contradicted { background: #F44336; }
+
+/* Confidence tags */
+.finding-top-row {
+  margin-bottom: 2px;
+}
+
+.finding-confidence-tag {
+  font-size: 9px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 1px 6px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.finding-confidence-tag.tag-confirmed {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+
+.finding-confidence-tag.tag-unverified {
+  background: #FFF3E0;
+  color: #E65100;
+}
+
+.finding-confidence-tag.tag-contradicted {
+  background: #FFEBEE;
+  color: #C62828;
+}
+
+.findings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.finding-item {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  padding: 8px;
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 4px;
+  transition: opacity 0.2s;
+}
+
+.finding-item.disabled {
+  opacity: 0.4;
+}
+
+.finding-left {
+  width: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.finding-left.confidence-confirmed { background: #4CAF50; }
+.finding-left.confidence-unverified { background: #FF9800; }
+.finding-left.confidence-contradicted { background: #F44336; }
+
+.finding-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.finding-fact {
+  font-size: 11px;
+  color: #333;
+  line-height: 1.4;
+}
+
+.finding-source {
+  font-size: 10px;
+  color: #999;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.finding-toggle {
+  align-self: center;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  background: none;
+  border: 1px solid #DDD;
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.finding-toggle:hover {
+  border-color: #999;
+  color: #000;
+}
+
+.research-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.research-confirm-btn {
+  flex: 1;
+}
+
+.research-skip-link {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+  flex-shrink: 0;
+}
+
+.research-skip-link:hover {
+  color: #666;
 }
 
 /* Step 02 Stats */

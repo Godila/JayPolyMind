@@ -227,7 +227,7 @@
             <div class="config-block">
               <div class="config-block-header">
                 <span class="config-block-title">Конфигурация агентов</span>
-                <span class="config-block-badge">{{ simulationConfig.agent_configs?.length || 0 }} Number</span>
+                <span class="config-block-badge">{{ simulationConfig.agent_configs?.length || 0 }} агентов</span>
               </div>
               <div class="agents-cards">
                 <div 
@@ -243,7 +243,7 @@
                     </div>
                     <div class="agent-tags">
                       <span class="agent-type">{{ agent.entity_type }}</span>
-                      <span class="agent-stance" :class="'stance-' + agent.stance">{{ agent.stance }}</span>
+                      <span class="agent-stance" :class="'stance-' + agent.stance">{{ { supportive: 'За', opposing: 'Против', neutral: 'Нейтрал' }[agent.stance?.toLowerCase()] || agent.stance }}</span>
                     </div>
                   </div>
                   
@@ -272,34 +272,34 @@
                   <div class="agent-params">
                     <div class="param-group">
                       <div class="param-item">
-                        <span class="param-label">Post/time</span>
+                        <span class="param-label">Пост/час</span>
                         <span class="param-value">{{ agent.posts_per_hour }}</span>
                       </div>
                       <div class="param-item">
-                        <span class="param-label">Comment/time</span>
+                        <span class="param-label">Комм./час</span>
                         <span class="param-value">{{ agent.comments_per_hour }}</span>
                       </div>
                       <div class="param-item">
-                        <span class="param-label">Response delay</span>
-                        <span class="param-value">{{ agent.response_delay_min }}-{{ agent.response_delay_max }}min</span>
+                        <span class="param-label">Задержка ответа</span>
+                        <span class="param-value">{{ agent.response_delay_min }}-{{ agent.response_delay_max }} мин</span>
                       </div>
                     </div>
                     <div class="param-group">
                       <div class="param-item">
-                        <span class="param-label">Activity level</span>
+                        <span class="param-label">Активность</span>
                         <span class="param-value with-bar">
                           <span class="mini-bar" :style="{ width: (agent.activity_level * 100) + '%' }"></span>
                           {{ (agent.activity_level * 100).toFixed(0) }}%
                         </span>
                       </div>
                       <div class="param-item">
-                        <span class="param-label">Sentiment tendency</span>
+                        <span class="param-label">Тональность</span>
                         <span class="param-value" :class="agent.sentiment_bias > 0 ? 'positive' : agent.sentiment_bias < 0 ? 'negative' : 'neutral'">
                           {{ agent.sentiment_bias > 0 ? '+' : '' }}{{ agent.sentiment_bias?.toFixed(1) }}
                         </span>
                       </div>
                       <div class="param-item">
-                        <span class="param-label">Influence</span>
+                        <span class="param-label">Влияние</span>
                         <span class="param-value highlight">{{ agent.influence_weight?.toFixed(1) }}</span>
                       </div>
                     </div>
@@ -382,7 +382,7 @@
                   :key="idx" 
                   class="reasoning-item"
                 >
-                  <p class="reasoning-text">{{ reason.trim().replace(/^Time config:\s*/i, 'Временная конфигурация: ').replace(/^Event config:\s*/i, 'Конфигурация событий: ') }}</p>
+                  <p class="reasoning-text">{{ reason.trim() }}</p>
                 </div>
               </div>
             </div>
@@ -600,32 +600,32 @@
           <!-- Basic information -->
           <div class="modal-info-grid">
             <div class="info-item">
-              <span class="info-label">Age manifestation</span>
-              <span class="info-value">{{ selectedProfile.age || '-' }} years old</span>
+              <span class="info-label">Возраст</span>
+              <span class="info-value">{{ selectedProfile.age || '-' }} лет</span>
             </div>
             <div class="info-item">
-              <span class="info-label">Gender manifestation</span>
-              <span class="info-value">{{ { male: 'Male', female: 'Female', other: 'Other' }[selectedProfile.gender] || selectedProfile.gender }}</span>
+              <span class="info-label">Пол</span>
+              <span class="info-value">{{ { male: 'Мужской', female: 'Женский', other: 'Другой' }[selectedProfile.gender] || selectedProfile.gender }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">Country/Region</span>
+              <span class="info-label">Страна/Регион</span>
               <span class="info-value">{{ selectedProfile.country || '-' }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">Event manifestationMBTI</span>
+              <span class="info-label">Тип личности MBTI</span>
               <span class="info-value mbti">{{ selectedProfile.mbti || '-' }}</span>
             </div>
           </div>
 
           <!-- Introduction -->
           <div class="modal-section">
-            <span class="section-label">Persona Introduction</span>
-            <p class="section-bio">{{ selectedProfile.bio || 'No introduction available' }}</p>
+            <span class="section-label">О персоне</span>
+            <p class="section-bio">{{ selectedProfile.bio || 'Описание отсутствует' }}</p>
           </div>
 
           <!-- Followed Topics -->
           <div class="modal-section" v-if="selectedProfile.interested_topics?.length">
-            <span class="section-label">Reality Seed Related Topics</span>
+            <span class="section-label">Связанные темы</span>
             <div class="topics-grid">
               <span 
                 v-for="topic in selectedProfile.interested_topics" 
@@ -637,25 +637,25 @@
 
           <!-- Detailed Persona -->
           <div class="modal-section" v-if="selectedProfile.persona">
-            <span class="section-label">Detailed Persona Background</span>
+            <span class="section-label">Детальный профиль персоны</span>
             
             <!-- Persona Dimension Overview -->
             <div class="persona-dimensions">
               <div class="dimension-card">
-                <span class="dim-title">Event panoramic experience</span>
-                <span class="dim-desc">Complete behavior trajectory in this event</span>
+                <span class="dim-title">Панорама события</span>
+                <span class="dim-desc">Полная траектория поведения в данном событии</span>
               </div>
               <div class="dimension-card">
-                <span class="dim-title">Behavior pattern profiling</span>
-                <span class="dim-desc">Experience summary and action style preference</span>
+                <span class="dim-title">Профиль поведения</span>
+                <span class="dim-desc">Опыт и предпочтения стиля действий</span>
               </div>
               <div class="dimension-card">
-                <span class="dim-title">Unique memory imprints</span>
-                <span class="dim-desc">Memory formed based on reality seed</span>
+                <span class="dim-title">Уникальные отпечатки памяти</span>
+                <span class="dim-desc">Память, сформированная на основе сценария</span>
               </div>
               <div class="dimension-card">
-                <span class="dim-title">Social Relationship Network</span>
-                <span class="dim-desc">Individual Links and Interaction Graph</span>
+                <span class="dim-title">Социальные связи</span>
+                <span class="dim-desc">Индивидуальные связи и граф взаимодействий</span>
               </div>
             </div>
 

@@ -29,6 +29,11 @@ PyMuPDF>=1.24.0
 charset-normalizer>=3.0.0
 chardet>=5.0.0
 
+# ============= Deep Research (web grounding) =============
+# SearXNG (primary) -- self-hosted, no deps needed (uses requests)
+# DuckDuckGo (fallback) -- when SearXNG is not available
+duckduckgo-search>=6.0.0
+
 # ============= 工具库 =============
 # 环境变量加载
 python-dotenv>=1.0.0

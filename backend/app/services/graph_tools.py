@@ -801,6 +801,36 @@ class GraphToolsService:
             "total_entities": len(entities)
         }
 
+    def get_entity_citations(
+        self,
+        graph_id: str,
+        entity_name: str,
+    ) -> str:
+        """
+        Get web research citations linked to an entity.
+
+        Returns formatted text with facts, sources, and confidence levels.
+        """
+        logger.info(f"Getting citations for entity: {entity_name}")
+
+        entity = self.storage.find_entity_by_name(graph_id, entity_name)
+        if not entity:
+            return f"No entity found matching '{entity_name}'."
+
+        citations = self.storage.get_citations_for_entity(entity['uuid'])
+        if not citations:
+            return f"No web research citations found for '{entity_name}'."
+
+        parts = [f"Web Research Citations for '{entity_name}' ({len(citations)} sources):"]
+        for i, cit in enumerate(citations, 1):
+            confidence = cit.get('confidence', 'unverified')
+            parts.append(
+                f"\n{i}. [{confidence.upper()}] {cit.get('fact', '')}"
+                f"\n   Source: {cit.get('source_title', 'Unknown')} ({cit.get('source_url', '')})"
+            )
+
+        return "\n".join(parts)
+
     # ========== Core Retrieval Tools (Optimized) ==========
 
     def insight_forge(

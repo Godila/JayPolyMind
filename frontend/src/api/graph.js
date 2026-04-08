@@ -68,3 +68,37 @@ export function getProject(projectId) {
     method: 'get'
   })
 }
+
+/**
+ * Confirm research findings and generate ontology
+ * @param {String} projectId - Project ID
+ * @param {Array} confirmedFindingIds - IDs of confirmed findings
+ * @returns {Promise}
+ */
+export function confirmResearch(projectId, confirmedFindingIds) {
+  return requestWithRetry(() =>
+    service({
+      url: '/api/graph/research/confirm',
+      method: 'post',
+      data: {
+        project_id: projectId,
+        confirmed_finding_ids: confirmedFindingIds
+      }
+    })
+  )
+}
+
+/**
+ * Skip research and generate ontology without web context
+ * @param {String} projectId - Project ID
+ * @returns {Promise}
+ */
+export function skipResearch(projectId) {
+  return requestWithRetry(() =>
+    service({
+      url: '/api/graph/research/skip',
+      method: 'post',
+      data: { project_id: projectId }
+    })
+  )
+}

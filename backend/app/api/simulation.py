@@ -865,6 +865,87 @@ def _get_report_id_for_simulation(simulation_id: str) -> str:
         return None
 
 
+@simulation_bp.route('/<simulation_id>/delete', methods=['DELETE'])
+def delete_simulation(simulation_id: str):
+    """Delete a simulation and its associated report"""
+    try:
+        manager = SimulationManager()
+        state = manager.get_simulation(simulation_id)
+        if not state:
+            return jsonify({"success": False, "error": f"Simulation not found: {simulation_id}"}), 404
+
+        result = manager.delete_simulation(simulation_id)
+        return jsonify({"success": True, "data": result})
+    except Exception as e:
+        logger.error(f"Failed to delete simulation {simulation_id}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@simulation_bp.route('/bulk-delete', methods=['POST'])
+def bulk_delete_simulations():
+    """Delete multiple simulations"""
+    try:
+        data = request.get_json()
+        simulation_ids = data.get("simulation_ids", [])
+        if not simulation_ids:
+            return jsonify({"success": False, "error": "No simulation_ids provided"}), 400
+
+        manager = SimulationManager()
+        results = []
+        for sim_id in simulation_ids:
+            try:
+                result = manager.delete_simulation(sim_id)
+                results.append(result)
+            except Exception as e:
+                results.append({"simulation_id": sim_id, "deleted": [], "errors": [str(e)]})
+
+        return jsonify({"success": True, "data": results, "count": len(results)})
+    except Exception as e:
+        logger.error(f"Failed to bulk delete simulations: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@simulation_bp.route('/project/<project_id>/delete-full', methods=['DELETE'])
+def delete_project_full(project_id: str):
+    """Cascade delete: project + all simulations + reports + Neo4j graph"""
+    try:
+        project = ProjectManager.get_project(project_id)
+        if not project:
+            return jsonify({"success": False, "error": f"Project not found: {project_id}"}), 404
+
+        deleted = {"simulations": [], "graph": False, "project": False}
+
+        # Delete all simulations for this project
+        manager = SimulationManager()
+        simulations = manager.list_simulations(project_id=project_id)
+        for sim in simulations:
+            try:
+                result = manager.delete_simulation(sim.simulation_id)
+                deleted["simulations"].append(result)
+            except Exception as e:
+                logger.warning(f"Failed to delete simulation {sim.simulation_id}: {e}")
+
+        # Delete Neo4j graph
+        graph_id = project.graph_id if hasattr(project, 'graph_id') else None
+        if graph_id:
+            try:
+                storage = current_app.extensions.get('neo4j_storage')
+                if storage:
+                    storage.delete_graph(graph_id)
+                    deleted["graph"] = True
+            except Exception as e:
+                logger.warning(f"Failed to delete graph {graph_id}: {e}")
+
+        # Delete project files
+        ProjectManager.delete_project(project_id)
+        deleted["project"] = True
+
+        return jsonify({"success": True, "data": deleted})
+    except Exception as e:
+        logger.error(f"Failed to delete project {project_id}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @simulation_bp.route('/history', methods=['GET'])
 def get_simulation_history():
     """
@@ -904,7 +985,9 @@ def get_simulation_history():
         limit = request.args.get('limit', 20, type=int)
         
         manager = SimulationManager()
-        simulations = manager.list_simulations()[:limit]
+        simulations = manager.list_simulations()
+        simulations.sort(key=lambda s: s.created_at or "", reverse=True)
+        simulations = simulations[:limit]
         
         # Enhance simulation data，Only from Simulation FileRead
         enriched_simulations = []
@@ -1594,14 +1677,25 @@ def start_simulation():
                 }), 400
             
             logger.info(f"Enable knowledge graph memory update: simulation_id={simulation_id}, graph_id={graph_id}")
-        
+
+        # Get storage for graph memory updater
+        storage = None
+        if enable_graph_memory_update:
+            storage = current_app.extensions.get('neo4j_storage')
+            if not storage:
+                return jsonify({
+                    "success": False,
+                    "error": "GraphStorage not initialized - cannot enable graph memory update"
+                }), 500
+
         # Start simulation
         run_state = SimulationRunner.start_simulation(
             simulation_id=simulation_id,
             platform=platform,
             max_rounds=max_rounds,
             enable_graph_memory_update=enable_graph_memory_update,
-            graph_id=graph_id
+            graph_id=graph_id,
+            storage=storage
         )
         
         # Update simulation status

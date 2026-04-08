@@ -23,6 +23,11 @@ CREATE CONSTRAINT episode_uuid IF NOT EXISTS
 FOR (ep:Episode) REQUIRE ep.uuid IS UNIQUE
 """
 
+CREATE_CITATION_UUID_CONSTRAINT = """
+CREATE CONSTRAINT citation_uuid IF NOT EXISTS
+FOR (c:Citation) REQUIRE c.uuid IS UNIQUE
+"""
+
 # Fulltext indexes (for BM25 keyword search)
 CREATE_ENTITY_FULLTEXT_INDEX = """
 CREATE FULLTEXT INDEX entity_fulltext IF NOT EXISTS
@@ -32,6 +37,11 @@ FOR (n:Entity) ON EACH [n.name, n.summary]
 CREATE_FACT_FULLTEXT_INDEX = """
 CREATE FULLTEXT INDEX fact_fulltext IF NOT EXISTS
 FOR ()-[r:RELATION]-() ON EACH [r.fact, r.name]
+"""
+
+CREATE_CITATION_FULLTEXT_INDEX = """
+CREATE FULLTEXT INDEX citation_fulltext IF NOT EXISTS
+FOR (c:Citation) ON EACH [c.fact, c.source_title]
 """
 
 
@@ -73,10 +83,12 @@ def get_all_schema_queries(dimensions: int = None) -> list:
         CREATE_GRAPH_UUID_CONSTRAINT,
         CREATE_ENTITY_UUID_CONSTRAINT,
         CREATE_EPISODE_UUID_CONSTRAINT,
+        CREATE_CITATION_UUID_CONSTRAINT,
         get_entity_vector_index_query(dimensions),
         get_relation_vector_index_query(dimensions),
         CREATE_ENTITY_FULLTEXT_INDEX,
         CREATE_FACT_FULLTEXT_INDEX,
+        CREATE_CITATION_FULLTEXT_INDEX,
     ]
 
 

@@ -227,6 +227,22 @@ class SimulationRunner:
     _graph_memory_enabled: Dict[str, bool] = {}  # simulation_id -> enabled
     
     @classmethod
+    def cleanup_memory(cls, simulation_id: str):
+        """Clean all in-memory state for a deleted simulation"""
+        cls._run_states.pop(simulation_id, None)
+        cls._processes.pop(simulation_id, None)
+        cls._action_queues.pop(simulation_id, None)
+        cls._monitor_threads.pop(simulation_id, None)
+        cls._graph_memory_enabled.pop(simulation_id, None)
+        for store in (cls._stdout_files, cls._stderr_files):
+            fh = store.pop(simulation_id, None)
+            if fh and not fh.closed:
+                try:
+                    fh.close()
+                except Exception:
+                    pass
+
+    @classmethod
     def get_run_state(cls, simulation_id: str) -> Optional[SimulationRunState]:
         """Get run state"""
         if simulation_id in cls._run_states:

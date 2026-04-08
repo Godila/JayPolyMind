@@ -173,7 +173,7 @@ class Neo4jStorage(GraphStorage):
     # Add data (NER → nodes/edges)
     # ----------------------------------------------------------------
 
-    def add_text(self, graph_id: str, text: str) -> str:
+    def add_text(self, graph_id: str, text: str, research_facts: Optional[List[str]] = None) -> str:
         """Process text: NER/RE → batch embed → create nodes/edges → return episode_id."""
         episode_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc).isoformat()
@@ -183,7 +183,7 @@ class Neo4jStorage(GraphStorage):
 
         # Extract entities and relations
         logger.info(f"[add_text] Starting NER extraction for chunk ({len(text)} chars)...")
-        extraction = self._ner.extract(text, ontology)
+        extraction = self._ner.extract(text, ontology, research_facts=research_facts)
         entities = extraction.get("entities", [])
         relations = extraction.get("relations", [])
 
@@ -587,13 +587,169 @@ class Neo4jStorage(GraphStorage):
                 ed["episodes"] = ed.get("episode_ids", [])
                 edges.append(ed)
 
+            # Get Citation nodes + SOURCED_FROM edges
+            citations = []
+            citation_edges = []
+            cit_result = tx.run(
+                """
+                MATCH (c:Citation {graph_id: $gid})
+                OPTIONAL MATCH (e:Entity)-[sf:SOURCED_FROM]->(c)
+                RETURN c, e.uuid AS entity_uuid, e.name AS entity_name
+                """,
+                gid=graph_id,
+            )
+            seen_cit_uuids = set()
+            for record in cit_result:
+                c = dict(record["c"])
+                cit_uuid = c.get("uuid", "")
+                if cit_uuid not in seen_cit_uuids:
+                    seen_cit_uuids.add(cit_uuid)
+                    citations.append({
+                        "uuid": cit_uuid,
+                        "name": c.get("name", "") or c.get("fact", "")[:80] or c.get("source_title", ""),
+                        "fact": c.get("fact", ""),
+                        "source_url": c.get("source_url", ""),
+                        "source_title": c.get("source_title", ""),
+                        "confidence": c.get("confidence", "unverified"),
+                        "labels": ["Citation"],
+                        "type": "Citation",
+                    })
+                if record["entity_uuid"]:
+                    citation_edges.append({
+                        "entity_uuid": record["entity_uuid"],
+                        "citation_uuid": cit_uuid,
+                    })
+
             return {
                 "graph_id": graph_id,
                 "nodes": nodes,
                 "edges": edges,
+                "citations": citations,
+                "citation_edges": citation_edges,
                 "node_count": len(nodes),
                 "edge_count": len(edges),
+                "citation_count": len(citations),
             }
+
+        with self._driver.session() as session:
+            return self._call_with_retry(session.execute_read, _read)
+
+    # ----------------------------------------------------------------
+    # Citation CRUD
+    # ----------------------------------------------------------------
+
+    def create_citation(self, graph_id: str, citation_data: Dict[str, Any]) -> str:
+        """Create or merge a Citation node. Returns citation uuid."""
+        cit_uuid = citation_data.get("id") or str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+
+        def _create(tx):
+            tx.run(
+                """
+                MERGE (c:Citation {graph_id: $gid, fact: $fact})
+                ON CREATE SET
+                    c.uuid = $uuid,
+                    c.name = $name,
+                    c.source_url = $source_url,
+                    c.source_title = $source_title,
+                    c.confidence = $confidence,
+                    c.research_round = $research_round,
+                    c.created_at = $created_at
+                ON MATCH SET
+                    c.name = $name,
+                    c.source_url = $source_url,
+                    c.confidence = $confidence
+                """,
+                gid=graph_id,
+                uuid=cit_uuid,
+                name=citation_data.get("fact", "")[:80] or citation_data.get("source_title", ""),
+                fact=citation_data.get("fact", ""),
+                source_url=citation_data.get("source_url", ""),
+                source_title=citation_data.get("source_title", ""),
+                confidence=citation_data.get("confidence", "unverified"),
+                research_round=citation_data.get("research_round", 1),
+                created_at=now,
+            )
+
+        with self._driver.session() as session:
+            self._call_with_retry(session.execute_write, _create)
+        return cit_uuid
+
+    def link_entity_to_citation(self, entity_uuid: str, citation_uuid: str) -> None:
+        """Create SOURCED_FROM relationship between Entity and Citation."""
+        def _link(tx):
+            tx.run(
+                """
+                MATCH (e:Entity {uuid: $entity_uuid})
+                MATCH (c:Citation {uuid: $citation_uuid})
+                MERGE (e)-[:SOURCED_FROM]->(c)
+                """,
+                entity_uuid=entity_uuid,
+                citation_uuid=citation_uuid,
+            )
+
+        with self._driver.session() as session:
+            self._call_with_retry(session.execute_write, _link)
+
+    def get_citations_for_entity(self, entity_uuid: str) -> List[Dict[str, Any]]:
+        """Get all citations linked to an entity via SOURCED_FROM."""
+        def _read(tx):
+            result = tx.run(
+                """
+                MATCH (e:Entity {uuid: $uuid})-[:SOURCED_FROM]->(c:Citation)
+                RETURN c
+                """,
+                uuid=entity_uuid,
+            )
+            return [{
+                "uuid": dict(r["c"]).get("uuid", ""),
+                "fact": dict(r["c"]).get("fact", ""),
+                "source_url": dict(r["c"]).get("source_url", ""),
+                "source_title": dict(r["c"]).get("source_title", ""),
+                "confidence": dict(r["c"]).get("confidence", ""),
+            } for r in result]
+
+        with self._driver.session() as session:
+            return self._call_with_retry(session.execute_read, _read)
+
+    def get_all_citations(self, graph_id: str) -> List[Dict[str, Any]]:
+        """Get all citation nodes for a graph."""
+        def _read(tx):
+            result = tx.run(
+                """
+                MATCH (c:Citation {graph_id: $gid})
+                RETURN c
+                """,
+                gid=graph_id,
+            )
+            return [{
+                "uuid": dict(r["c"]).get("uuid", ""),
+                "fact": dict(r["c"]).get("fact", ""),
+                "source_url": dict(r["c"]).get("source_url", ""),
+                "source_title": dict(r["c"]).get("source_title", ""),
+                "confidence": dict(r["c"]).get("confidence", ""),
+            } for r in result]
+
+        with self._driver.session() as session:
+            return self._call_with_retry(session.execute_read, _read)
+
+    def find_entity_by_name(self, graph_id: str, name: str) -> Optional[Dict[str, Any]]:
+        """Find entity by name (case-insensitive substring match)."""
+        def _read(tx):
+            result = tx.run(
+                """
+                MATCH (n:Entity {graph_id: $gid})
+                WHERE toLower(n.name) CONTAINS toLower($name)
+                RETURN n, labels(n) AS labels
+                LIMIT 1
+                """,
+                gid=graph_id,
+                name=name,
+            )
+            record = result.single()
+            if record:
+                return self._node_to_dict(record["n"], record["labels"])
+            return None
 
         with self._driver.session() as session:
             return self._call_with_retry(session.execute_read, _read)

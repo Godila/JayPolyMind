@@ -17,6 +17,7 @@ from ..config import Config
 class ProjectStatus(str, Enum):
     """Project status"""
     CREATED = "created"              # Just created, files uploaded
+    RESEARCHING = "researching"      # Deep Research in progress
     ONTOLOGY_GENERATED = "ontology_generated"  # Ontology generated
     GRAPH_BUILDING = "graph_building"    # Graph building in progress
     GRAPH_COMPLETED = "graph_completed"  # Graph build completed
@@ -49,6 +50,13 @@ class Project:
     chunk_size: int = 500
     chunk_overlap: int = 50
 
+    # Deep Research results
+    research_citations: Optional[List[Dict[str, str]]] = None
+    research_queries: Optional[List[str]] = None
+    research_task_id: Optional[str] = None
+    research_findings: Optional[List[Dict[str, Any]]] = None
+    research_confirmed: Optional[bool] = None
+
     # Error information
     error: Optional[str] = None
 
@@ -69,6 +77,11 @@ class Project:
             "simulation_requirement": self.simulation_requirement,
             "chunk_size": self.chunk_size,
             "chunk_overlap": self.chunk_overlap,
+            "research_citations": self.research_citations,
+            "research_queries": self.research_queries,
+            "research_task_id": self.research_task_id,
+            "research_findings": self.research_findings,
+            "research_confirmed": self.research_confirmed,
             "error": self.error
         }
     
@@ -94,6 +107,11 @@ class Project:
             simulation_requirement=data.get('simulation_requirement'),
             chunk_size=data.get('chunk_size', 500),
             chunk_overlap=data.get('chunk_overlap', 50),
+            research_citations=data.get('research_citations'),
+            research_queries=data.get('research_queries'),
+            research_task_id=data.get('research_task_id'),
+            research_findings=data.get('research_findings'),
+            research_confirmed=data.get('research_confirmed'),
             error=data.get('error')
         )
 
