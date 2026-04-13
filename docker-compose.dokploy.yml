@@ -45,13 +45,6 @@ services:
       - default
     expose:
       - "5001"
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=dokploy-network
-      - traefik.http.routers.jaypolymind-api.rule=Host(`jaypolymind.haragy.top`) && PathPrefix(`/api`)
-      - traefik.http.routers.jaypolymind-api.entrypoints=websecure
-      - traefik.http.routers.jaypolymind-api.tls.certResolver=letsencrypt
-      - traefik.http.services.jaypolymind-api.loadbalancer.server.port=5001
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/api/health"]
       interval: 30s
@@ -69,14 +62,6 @@ services:
       - default
     expose:
       - "80"
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=dokploy-network
-      - traefik.http.routers.jaypolymind-frontend.rule=Host(`jaypolymind.haragy.top`)
-      - traefik.http.routers.jaypolymind-frontend.entrypoints=websecure
-      - traefik.http.routers.jaypolymind-frontend.tls.certResolver=letsencrypt
-      - traefik.http.services.jaypolymind-frontend.loadbalancer.server.port=80
-      - traefik.http.routers.jaypolymind-frontend.priority=1
     depends_on:
       - jaypolymind-api
 
